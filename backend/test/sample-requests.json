@@ -1,0 +1,296 @@
+{
+  "info": {
+    "name": "BlockERP API",
+    "description": "Sample requests for BlockERP backend — import into Postman or REST client",
+    "version": "1.0.0",
+    "baseUrl": "http://localhost:3001/api"
+  },
+  "requests": [
+    {
+      "name": "Health Check",
+      "method": "GET",
+      "url": "{{baseUrl}}/health"
+    },
+
+    {
+      "name": "Create Product",
+      "method": "POST",
+      "url": "{{baseUrl}}/product/create",
+      "body": {
+        "name": "Wireless Mouse",
+        "sku": "WM-001",
+        "category": "Electronics",
+        "price": 29.99,
+        "quantity": 150,
+        "reorderLevel": 20
+      }
+    },
+    {
+      "name": "Get Product by Barcode",
+      "method": "GET",
+      "url": "{{baseUrl}}/product/barcode/WM-001"
+    },
+    {
+      "name": "Get All Inventory",
+      "method": "GET",
+      "url": "{{baseUrl}}/inventory"
+    },
+    {
+      "name": "Add Stock",
+      "method": "POST",
+      "url": "{{baseUrl}}/inventory/add",
+      "body": {
+        "productId": "{{productId}}",
+        "quantity": 50,
+        "reason": "Warehouse restock"
+      }
+    },
+    {
+      "name": "Update Stock (Deduct)",
+      "method": "POST",
+      "url": "{{baseUrl}}/inventory/update",
+      "body": {
+        "productId": "{{productId}}",
+        "quantity": -5,
+        "reason": "Customer sale"
+      }
+    },
+    {
+      "name": "Get Low Stock Items",
+      "method": "GET",
+      "url": "{{baseUrl}}/inventory/low-stock"
+    },
+    {
+      "name": "Scan Barcode (POS)",
+      "method": "POST",
+      "url": "{{baseUrl}}/inventory/scan",
+      "body": {
+        "barcode": "WM-001",
+        "quantity": 1
+      }
+    },
+    {
+      "name": "Sale Scan (alias)",
+      "method": "POST",
+      "url": "{{baseUrl}}/sale/scan",
+      "body": {
+        "barcode": "WM-001",
+        "quantity": 1
+      }
+    },
+    {
+      "name": "Get Product Barcode Image",
+      "method": "GET",
+      "url": "{{baseUrl}}/product/{{productId}}/barcode"
+    },
+    {
+      "name": "Get Product Label",
+      "method": "GET",
+      "url": "{{baseUrl}}/product/{{productId}}/label"
+    },
+
+    {
+      "name": "Create Order (Blockchain)",
+      "method": "POST",
+      "url": "{{baseUrl}}/order/create",
+      "body": {
+        "vendorId": "{{vendorId}}",
+        "items": [
+          { "productId": "{{productId}}", "quantity": 10, "price": 29.99 }
+        ],
+        "totalAmount": 299.90
+      }
+    },
+    {
+      "name": "Confirm Delivery",
+      "method": "POST",
+      "url": "{{baseUrl}}/order/confirm-delivery",
+      "body": {
+        "orderId": "ORD-0001"
+      }
+    },
+    {
+      "name": "Release Payment",
+      "method": "POST",
+      "url": "{{baseUrl}}/order/release-payment",
+      "body": {
+        "orderId": "ORD-0001"
+      }
+    },
+    {
+      "name": "Cancel Order",
+      "method": "POST",
+      "url": "{{baseUrl}}/order/cancel",
+      "body": {
+        "orderId": "ORD-0001"
+      }
+    },
+    {
+      "name": "Get Order by ID",
+      "method": "GET",
+      "url": "{{baseUrl}}/order/ORD-0001"
+    },
+    {
+      "name": "Get All Orders",
+      "method": "GET",
+      "url": "{{baseUrl}}/orders"
+    },
+
+    {
+      "name": "Generate Invoice (PDF + IPFS)",
+      "method": "POST",
+      "url": "{{baseUrl}}/invoice/generate",
+      "body": {
+        "orderId": "ORD-0001",
+        "customer": "Acme Corp",
+        "items": [
+          { "description": "Wireless Mouse", "quantity": 10, "price": 29.99 }
+        ],
+        "tax": 30.00,
+        "discount": 0
+      }
+    },
+    {
+      "name": "Download Invoice PDF",
+      "method": "GET",
+      "url": "{{baseUrl}}/invoice/download/INV-0001"
+    },
+    {
+      "name": "Get Invoice by ID",
+      "method": "GET",
+      "url": "{{baseUrl}}/invoice/INV-0001"
+    },
+    {
+      "name": "Get All Invoices",
+      "method": "GET",
+      "url": "{{baseUrl}}/invoices"
+    },
+    {
+      "name": "Mark Invoice as Paid",
+      "method": "POST",
+      "url": "{{baseUrl}}/invoice/INV-0001/pay"
+    },
+    {
+      "name": "Regenerate Invoice PDF",
+      "method": "POST",
+      "url": "{{baseUrl}}/invoice/INV-0001/regenerate"
+    },
+
+    {
+      "name": "Create Vendor",
+      "method": "POST",
+      "url": "{{baseUrl}}/vendor/create",
+      "body": {
+        "name": "TechSupply Co",
+        "email": "orders@techsupply.com",
+        "phone": "+1-555-0100",
+        "category": "Electronics"
+      }
+    },
+    {
+      "name": "Get All Vendors",
+      "method": "GET",
+      "url": "{{baseUrl}}/vendors"
+    },
+    {
+      "name": "Get Vendor by ID",
+      "method": "GET",
+      "url": "{{baseUrl}}/vendor/{{vendorId}}"
+    },
+    {
+      "name": "Update Vendor",
+      "method": "PUT",
+      "url": "{{baseUrl}}/vendor/{{vendorId}}",
+      "body": {
+        "name": "TechSupply Co Ltd",
+        "email": "sales@techsupply.com"
+      }
+    },
+    {
+      "name": "Get Vendor Trust Score",
+      "method": "GET",
+      "url": "{{baseUrl}}/vendor/trust-score/{{vendorId}}"
+    },
+    {
+      "name": "Get Vendor Leaderboard",
+      "method": "GET",
+      "url": "{{baseUrl}}/vendors/leaderboard"
+    },
+    {
+      "name": "Record Order Completion (Trust)",
+      "method": "POST",
+      "url": "{{baseUrl}}/vendor/{{vendorId}}/record-order",
+      "body": {
+        "orderId": "ORD-0001",
+        "daysLate": 0,
+        "qualityIssues": false
+      }
+    },
+
+    {
+      "name": "AI Suggest Reorder",
+      "method": "POST",
+      "url": "{{baseUrl}}/ai/suggest-reorder"
+    },
+    {
+      "name": "AI Explain Transaction",
+      "method": "GET",
+      "url": "{{baseUrl}}/ai/explain-transaction/ORD-0001"
+    },
+    {
+      "name": "AI Service Status",
+      "method": "GET",
+      "url": "{{baseUrl}}/ai/status"
+    },
+
+    {
+      "name": "Verify Audit Record",
+      "method": "GET",
+      "url": "{{baseUrl}}/audit/verify/ORD-0001"
+    },
+
+    {
+      "name": "Sync Offline Queue",
+      "method": "POST",
+      "url": "{{baseUrl}}/sync",
+      "body": {
+        "transactions": [
+          {
+            "clientId": "offline-tx-001",
+            "type": "inventory_update",
+            "payload": {
+              "productId": "{{productId}}",
+              "quantity": -2,
+              "reason": "Offline sale"
+            }
+          },
+          {
+            "clientId": "offline-tx-002",
+            "type": "order",
+            "payload": {
+              "vendorId": "{{vendorId}}",
+              "items": [{ "productId": "{{productId}}", "quantity": 5, "price": 29.99 }],
+              "totalAmount": 149.95
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "name": "Blockchain Status",
+      "method": "GET",
+      "url": "{{baseUrl}}/blockchain/status"
+    },
+    {
+      "name": "Blockchain Get Order",
+      "method": "GET",
+      "url": "{{baseUrl}}/blockchain/order/ORD-0001"
+    },
+    {
+      "name": "Blockchain Deploy Contract",
+      "method": "POST",
+      "url": "{{baseUrl}}/blockchain/deploy"
+    }
+  ]
+}

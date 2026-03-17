@@ -1,9 +1,5 @@
 import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
-import Badge from '../components/UI/Badge'
-import Button from '../components/UI/Button'
-import Modal from '../components/UI/Modal'
-import AnimatedNumber from '../components/UI/AnimatedNumber'
 
 export default function Orders() {
   const orders = useStore((state) => state.orders)
@@ -17,7 +13,7 @@ export default function Orders() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 20
+  const pageSize = 15
 
   const stats = getOrderStats()
 
@@ -27,7 +23,7 @@ export default function Orders() {
       const matchesSearch = !query || 
         order.id.toLowerCase().includes(query) ||
         order.customer.toLowerCase().includes(query)
-      const matchesStatus = statusFilter === 'all' || order.status === statusFilter
+      const matchesStatus = statusFilter === 'all' || order.status.toLowerCase() === statusFilter
       return matchesSearch && matchesStatus
     })
   }, [orders, localSearch, searchQuery, statusFilter])
@@ -46,111 +42,103 @@ export default function Orders() {
     }
     updateOrderStatus(orderId, newStatus)
     addToast(`Order ${orderId} updated to ${newStatus}`, 'success')
+    setSelectedOrder(null)
   }
 
-  const getStatusBadge = (status) => {
-    const variants = {
-      pending: 'warning',
-      processing: 'info',
-      shipped: 'success',
-      delivered: 'success',
-      cancelled: 'error'
+  const getStatusClass = (status) => {
+    const map = {
+      'Pending': 'neutral',
+      'Processing': 'warning', 
+      'Shipped': 'info',
+      'Delivered': 'success',
+      'Cancelled': 'danger',
     }
-    return <Badge variant={variants[status] || 'default'}>{status}</Badge>
+    return map[status] || 'neutral'
   }
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString()
-  }
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR'
-    }).format(value)
-  }
+  const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString()
+  const formatCurrency = (value) => `₹${value.toLocaleString()}`
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Orders</h1>
-          <p className="text-text-secondary mt-1">Manage and track customer orders</p>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="page-header" style={{ marginBottom: 0 }}>
+          <h1 className="page-title">Orders</h1>
+          <p className="page-subtitle">Manage and track all customer orders</p>
         </div>
         {user.role !== 'viewer' && (
-          <Button>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ marginRight: 'var(--space-2)' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             New Order
-          </Button>
+          </button>
         )}
-      </div>
+      </header>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Total Orders</p>
-          <p className="text-2xl font-bold text-text-primary mt-1">
-            <AnimatedNumber value={stats.total} />
-          </p>
+      <div className="data-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+        <div className="kpi-card">
+          <div className="kpi-label">Total Orders</div>
+          <div className="kpi-value">{stats.total}</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Pending</p>
-          <p className="text-2xl font-bold text-orange mt-1">
-            <AnimatedNumber value={stats.pending} />
-          </p>
+        <div className="kpi-card">
+          <div className="kpi-label">Pending</div>
+          <div className="kpi-value" style={{ color: 'var(--erp-warning)' }}>{stats.pending}</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Processing</p>
-          <p className="text-2xl font-bold text-blue mt-1">
-            <AnimatedNumber value={stats.processing} />
-          </p>
+        <div className="kpi-card">
+          <div className="kpi-label">Processing</div>
+          <div className="kpi-value" style={{ color: 'var(--erp-info)' }}>{stats.processing}</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Delivered</p>
-          <p className="text-2xl font-bold text-green mt-1">
-            <AnimatedNumber value={stats.delivered} />
-          </p>
+        <div className="kpi-card">
+          <div className="kpi-label">Shipped</div>
+          <div className="kpi-value" style={{ color: 'var(--erp-purple)' }}>{stats.shipped}</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Total Value</p>
-          <p className="text-2xl font-bold text-purple mt-1">
-            ${Math.round(stats.totalValue / 1000)}K
-          </p>
+        <div className="kpi-card">
+          <div className="kpi-label">Delivered</div>
+          <div className="kpi-value" style={{ color: 'var(--erp-success)' }}>{stats.delivered}</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4">
-        <div className="relative flex-1 max-w-xs">
-          <svg 
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted"
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+      <div className="filter-bar">
+        <div style={{ position: 'relative', flex: 1, maxWidth: '300px' }}>
           <input
-            type="text"
+            type="search"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search orders..."
-            className="w-full pl-10 pr-4 py-2 bg-white border border-border rounded-lg text-sm"
+            style={{ paddingLeft: 'var(--space-10)' }}
           />
+          <svg 
+            width="18" height="18" 
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            style={{ position: 'absolute', left: 'var(--space-3)', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-foreground)' }}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
-        <div className="flex gap-2">
+        
+        <div role="tablist" style={{ display: 'flex' }}>
           {['all', 'pending', 'processing', 'shipped', 'delivered'].map(status => (
             <button
               key={status}
+              role="tab"
+              aria-selected={statusFilter === status}
               onClick={() => { setStatusFilter(status); setCurrentPage(1) }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
-                statusFilter === status 
-                  ? 'bg-blue text-white' 
-                  : 'bg-white border border-border hover:bg-gray-50'
-              }`}
+              style={{
+                padding: 'var(--space-2) var(--space-4)',
+                fontSize: 'var(--text-7)',
+                fontWeight: 'var(--font-medium)',
+                textTransform: 'capitalize',
+                border: '1px solid var(--border)',
+                borderRight: status === 'delivered' ? '1px solid var(--border)' : 'none',
+                borderRadius: status === 'all' ? 'var(--radius-medium) 0 0 var(--radius-medium)' : status === 'delivered' ? '0 var(--radius-medium) var(--radius-medium) 0' : '0',
+                background: statusFilter === status ? 'var(--erp-primary)' : 'var(--background)',
+                color: statusFilter === status ? 'white' : 'var(--foreground)',
+                cursor: 'pointer'
+              }}
             >
               {status}
             </button>
@@ -159,55 +147,57 @@ export default function Orders() {
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <div className="table">
+          <table>
             <thead>
-              <tr className="border-b border-border bg-gray-50">
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Order ID</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Customer</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Date</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Items</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Total</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Status</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Blockchain</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Actions</th>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Blockchain</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {paginatedOrders.map((order) => (
                 <tr 
-                  key={order.id} 
-                  className="border-b border-border last:border-0 hover:bg-gray-50 transition-colors cursor-pointer"
+                  key={order.id}
+                  style={{ cursor: 'pointer' }}
                   onClick={() => setSelectedOrder(order)}
                 >
-                  <td className="py-3 px-6 text-sm font-medium text-blue">{order.id}</td>
-                  <td className="py-3 px-6 text-sm text-text-primary">{order.customer}</td>
-                  <td className="py-3 px-6 text-sm text-text-secondary">{formatDate(order.date)}</td>
-                  <td className="py-3 px-6 text-sm text-text-secondary">{order.items}</td>
-                  <td className="py-3 px-6 text-sm font-medium text-text-primary">
-                    {formatCurrency(order.total)}
+                  <td style={{ fontWeight: 'var(--font-medium)', color: 'var(--erp-primary)' }}>{order.id}</td>
+                  <td>{order.customer}</td>
+                  <td style={{ color: 'var(--muted-foreground)' }}>{formatDate(order.date)}</td>
+                  <td>{order.items}</td>
+                  <td style={{ fontWeight: 'var(--font-medium)' }}>{formatCurrency(order.total || order.amount)}</td>
+                  <td>
+                    <span className={`status-badge ${getStatusClass(order.status)}`}>
+                      {order.status}
+                    </span>
                   </td>
-                  <td className="py-3 px-6">{getStatusBadge(order.status)}</td>
-                  <td className="py-3 px-6">
+                  <td>
                     {order.blockchainHash ? (
-                      <span className="text-green text-sm">✓ Verified</span>
+                      <span style={{ color: 'var(--erp-success)', fontSize: 'var(--text-7)' }}>✓ Verified</span>
                     ) : (
-                      <span className="text-text-muted text-sm">-</span>
+                      <span style={{ color: 'var(--muted-foreground)' }}>—</span>
                     )}
                   </td>
-                  <td className="py-3 px-6" onClick={(e) => e.stopPropagation()}>
-                    {user.role !== 'viewer' && order.status !== 'delivered' && order.status !== 'cancelled' && (
+                  <td onClick={(e) => e.stopPropagation()}>
+                    {user.role !== 'viewer' && order.status !== 'Delivered' && order.status !== 'Cancelled' && (
                       <select
                         value=""
                         onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                        className="text-sm border border-border rounded px-2 py-1"
+                        style={{ fontSize: 'var(--text-8)', padding: 'var(--space-1) var(--space-2)' }}
                       >
                         <option value="">Update</option>
-                        {order.status === 'pending' && <option value="processing">Processing</option>}
-                        {order.status === 'processing' && <option value="shipped">Shipped</option>}
-                        {order.status === 'shipped' && <option value="delivered">Delivered</option>}
-                        <option value="cancelled">Cancel</option>
+                        {order.status === 'Pending' && <option value="Processing">Processing</option>}
+                        {order.status === 'Processing' && <option value="Shipped">Shipped</option>}
+                        {order.status === 'Shipped' && <option value="Delivered">Delivered</option>}
+                        <option value="Cancelled">Cancel</option>
                       </select>
                     )}
                   </td>
@@ -218,103 +208,165 @@ export default function Orders() {
         </div>
         
         {/* Pagination */}
-        <div className="px-6 py-4 border-t border-border flex items-center justify-between">
-          <p className="text-sm text-text-muted">
+        <div style={{ 
+          padding: 'var(--space-4)', 
+          borderTop: '1px solid var(--border)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between' 
+        }}>
+          <span style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>
             Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredOrders.length)} of {filteredOrders.length} orders
-          </p>
-          <div className="flex gap-2">
-            <Button 
-              variant="secondary" 
-              size="sm" 
+          </span>
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <button 
+              data-variant="secondary"
+              className="small"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
             >
               Previous
-            </Button>
-            <Button 
-              variant="secondary" 
-              size="sm" 
+            </button>
+            <button 
+              data-variant="secondary"
+              className="small"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => p + 1)}
             >
               Next
-            </Button>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Order Detail Modal */}
+      {/* Order Detail Dialog */}
       {selectedOrder && (
-        <Modal 
-          title={`Order ${selectedOrder.id}`} 
-          onClose={() => setSelectedOrder(null)}
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-text-muted">Customer</label>
-                <p className="font-medium text-text-primary">{selectedOrder.customer}</p>
-              </div>
-              <div>
-                <label className="text-sm text-text-muted">Order Date</label>
-                <p className="font-medium text-text-primary">{formatDate(selectedOrder.date)}</p>
-              </div>
-              <div>
-                <label className="text-sm text-text-muted">Items</label>
-                <p className="font-medium text-text-primary">{selectedOrder.items} items</p>
-              </div>
-              <div>
-                <label className="text-sm text-text-muted">Total</label>
-                <p className="font-medium text-text-primary">{formatCurrency(selectedOrder.total)}</p>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm text-text-muted">Status</label>
-              <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
-            </div>
-
-            {selectedOrder.blockchainHash && (
-              <div>
-                <label className="text-sm text-text-muted">Blockchain Hash</label>
-                <p className="font-mono text-xs text-green break-all mt-1">
-                  {selectedOrder.blockchainHash}
-                </p>
-              </div>
-            )}
-
-            {user.role !== 'viewer' && selectedOrder.status !== 'delivered' && selectedOrder.status !== 'cancelled' && (
-              <div className="pt-4 border-t border-border">
-                <label className="text-sm text-text-muted mb-2 block">Update Status</label>
-                <div className="flex gap-2">
-                  {selectedOrder.status === 'pending' && (
-                    <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, 'processing')}>
-                      Mark Processing
-                    </Button>
-                  )}
-                  {selectedOrder.status === 'processing' && (
-                    <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, 'shipped')}>
-                      Mark Shipped
-                    </Button>
-                  )}
-                  {selectedOrder.status === 'shipped' && (
-                    <Button size="sm" onClick={() => handleStatusUpdate(selectedOrder.id, 'delivered')}>
-                      Mark Delivered
-                    </Button>
-                  )}
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    onClick={() => handleStatusUpdate(selectedOrder.id, 'cancelled')}
-                  >
-                    Cancel
-                  </Button>
+        <dialog open style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', background: 'transparent', border: 'none' }}>
+          <div 
+            style={{ 
+              position: 'fixed', 
+              inset: 0, 
+              background: 'rgba(0,0,0,0.5)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center' 
+            }}
+            onClick={() => setSelectedOrder(null)}
+          >
+            <div 
+              className="card" 
+              style={{ 
+                width: '100%', 
+                maxWidth: '500px', 
+                padding: 0,
+                animation: 'popIn 0.2s ease-out'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <header style={{ 
+                padding: 'var(--space-4)', 
+                borderBottom: '1px solid var(--border)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between' 
+              }}>
+                <h2 style={{ fontSize: 'var(--text-5)', fontWeight: 'var(--font-semibold)' }}>
+                  Order {selectedOrder.id}
+                </h2>
+                <button className="icon-btn" onClick={() => setSelectedOrder(null)}>
+                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </header>
+              
+              <div style={{ padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                  <div>
+                    <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>Customer</label>
+                    <p style={{ fontWeight: 'var(--font-medium)' }}>{selectedOrder.customer}</p>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>Order Date</label>
+                    <p style={{ fontWeight: 'var(--font-medium)' }}>{formatDate(selectedOrder.date)}</p>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>Items</label>
+                    <p style={{ fontWeight: 'var(--font-medium)' }}>{selectedOrder.items} items</p>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>Total</label>
+                    <p style={{ fontWeight: 'var(--font-medium)' }}>{formatCurrency(selectedOrder.total || selectedOrder.amount)}</p>
+                  </div>
                 </div>
+
+                <div>
+                  <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>Status</label>
+                  <div style={{ marginTop: 'var(--space-1)' }}>
+                    <span className={`status-badge ${getStatusClass(selectedOrder.status)}`}>
+                      {selectedOrder.status}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedOrder.blockchainHash && (
+                  <div>
+                    <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>Blockchain Hash</label>
+                    <code style={{ 
+                      display: 'block', 
+                      fontSize: 'var(--text-8)', 
+                      color: 'var(--erp-success)', 
+                      wordBreak: 'break-all',
+                      marginTop: 'var(--space-1)'
+                    }}>
+                      {selectedOrder.blockchainHash}
+                    </code>
+                  </div>
+                )}
+
+                {user.role !== 'viewer' && selectedOrder.status !== 'Delivered' && selectedOrder.status !== 'Cancelled' && (
+                  <div style={{ paddingTop: 'var(--space-3)', borderTop: '1px solid var(--border)' }}>
+                    <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)', display: 'block', marginBottom: 'var(--space-2)' }}>
+                      Update Status
+                    </label>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                      {selectedOrder.status === 'Pending' && (
+                        <button className="small" onClick={() => handleStatusUpdate(selectedOrder.id, 'Processing')}>
+                          Mark Processing
+                        </button>
+                      )}
+                      {selectedOrder.status === 'Processing' && (
+                        <button className="small" onClick={() => handleStatusUpdate(selectedOrder.id, 'Shipped')}>
+                          Mark Shipped
+                        </button>
+                      )}
+                      {selectedOrder.status === 'Shipped' && (
+                        <button className="small" onClick={() => handleStatusUpdate(selectedOrder.id, 'Delivered')}>
+                          Mark Delivered
+                        </button>
+                      )}
+                      <button 
+                        data-variant="secondary"
+                        className="small"
+                        onClick={() => handleStatusUpdate(selectedOrder.id, 'Cancelled')}
+                      >
+                        Cancel Order
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </Modal>
+        </dialog>
       )}
+
+      <style>{`
+        @keyframes popIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   )
 }

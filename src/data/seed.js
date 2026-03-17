@@ -37,76 +37,16 @@ export const PRODUCTS = [
   { id: 12, name: 'Integration Hub',         sku: 'SKU-RSMBY4', category: 'Software',      price: 8531,  stock: 263, reorderLevel: 50,  status: 'In Stock',   lastRestocked: '2026-02-10' },
 ]
 
-// Customer names and companies for generating realistic data
+// Client/buyer names for orders and invoices
 const firstNames = ['John', 'William', 'Robert', 'Michael', 'David', 'James', 'Richard', 'Joseph', 'Thomas', 'Christopher', 'Emily', 'Amanda', 'Sarah', 'Jessica', 'Jennifer', 'Lisa', 'Mary', 'Patricia', 'Elizabeth', 'Linda']
 const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee']
 const companies = ['MetroWorks Inc', 'QuarterTech Industries', 'Pacific Trading Co', 'TechView Solutions', 'MidState Ventures', 'Global Dynamics', 'Apex Systems', 'Vertex Group', 'Synergy Corp', 'Prime Industries', 'Nova Tech', 'Summit Holdings', 'Cascade Enterprises', 'Horizon Partners', 'Alliance Group']
 
-// Helper to determine customer segment based on lifetime value
-const getSegment = (value) => {
-  if (value >= 50000) return 'enterprise'
-  if (value >= 25000) return 'business'
-  if (value >= 10000) return 'startup'
-  return 'individual'
-}
-
-// Customers (50 items) - status: 'active' or 'inactive', segment: enterprise/business/startup/individual
-export const CUSTOMERS = [
-  { id: 1,  name: 'John Smith',        company: 'MetroWorks Inc',            email: 'john.smith@metroworksinc.com',            phone: '+1 (203) 495-1400', status: 'active',  orders: 22, totalSpent: 95458, lifetimeValue: 95458, segment: 'enterprise' },
-  { id: 2,  name: 'William Brown',     company: 'MetroWorks Inc',            email: 'william.brown@metroworksinc.com',         phone: '+1 (764) 763-3817', status: 'active',  orders: 19, totalSpent: 91181, lifetimeValue: 91181, segment: 'enterprise' },
-  { id: 3,  name: 'William Davis',     company: 'QuarterTech Industries',    email: 'william.davis@quartertechindustries.com', phone: '+1 (848) 295-5700', status: 'active',  orders: 22, totalSpent: 81906, lifetimeValue: 81906, segment: 'enterprise' },
-  { id: 4,  name: 'Robert Garcia',     company: 'Pacific Trading Co',        email: 'robert.garcia@pacifictradingco.com',      phone: '+1 (572) 276-6490', status: 'active',  orders: 22, totalSpent: 70400, lifetimeValue: 70400, segment: 'enterprise' },
-  { id: 5,  name: 'John Williams',     company: 'TechView Solutions',        email: 'john.williams@techviewsolutions.com',     phone: '+1 (211) 609-2591', status: 'inactive',   orders: 24, totalSpent: 69912, lifetimeValue: 69912, segment: 'enterprise' },
-  { id: 6,  name: 'Michael Williams',  company: 'MidState Ventures',         email: 'michael.williams@midstateventures.com',   phone: '+1 (757) 371-3572', status: 'active',  orders: 18, totalSpent: 66924, lifetimeValue: 66924, segment: 'enterprise' },
-  { id: 7,  name: 'David Johnson',     company: 'Global Dynamics',           email: 'david.johnson@globaldynamics.com',        phone: '+1 (432) 887-2341', status: 'active',  orders: 17, totalSpent: 64500, lifetimeValue: 64500, segment: 'enterprise' },
-  { id: 8,  name: 'James Anderson',    company: 'Apex Systems',              email: 'james.anderson@apexsystems.com',          phone: '+1 (555) 234-5678', status: 'active',  orders: 15, totalSpent: 62100, lifetimeValue: 62100, segment: 'enterprise' },
-  { id: 9,  name: 'Emily Davis',       company: 'Vertex Group',              email: 'emily.davis@vertexgroup.com',             phone: '+1 (321) 456-7890', status: 'active',  orders: 14, totalSpent: 59800, lifetimeValue: 59800, segment: 'enterprise' },
-  { id: 10, name: 'Sarah Wilson',      company: 'Synergy Corp',              email: 'sarah.wilson@synergycorp.com',            phone: '+1 (678) 901-2345', status: 'active',  orders: 16, totalSpent: 57400, lifetimeValue: 57400, segment: 'enterprise' },
-  { id: 11, name: 'Amanda Martinez',   company: 'Prime Industries',          email: 'amanda.martinez@primeindustries.com',     phone: '+1 (890) 123-4567', status: 'active',  orders: 13, totalSpent: 54900, lifetimeValue: 54900, segment: 'enterprise' },
-  { id: 12, name: 'Richard Thomas',    company: 'Nova Tech',                 email: 'richard.thomas@novatech.com',             phone: '+1 (234) 567-8901', status: 'active',  orders: 8,  totalSpent: 52300, lifetimeValue: 52300, segment: 'enterprise' },
-  { id: 13, name: 'Jessica Brown',     company: 'Summit Holdings',           email: 'jessica.brown@summitholdings.com',        phone: '+1 (345) 678-9012', status: 'active',  orders: 12, totalSpent: 49700, lifetimeValue: 49700, segment: 'business' },
-  { id: 14, name: 'Christopher Lee',   company: 'Cascade Enterprises',       email: 'christopher.lee@cascadeenterprises.com',  phone: '+1 (456) 789-0123', status: 'active',  orders: 11, totalSpent: 47200, lifetimeValue: 47200, segment: 'business' },
-  { id: 15, name: 'Jennifer Garcia',   company: 'Horizon Partners',          email: 'jennifer.garcia@horizonpartners.com',     phone: '+1 (567) 890-1234', status: 'active',  orders: 9,  totalSpent: 44600, lifetimeValue: 44600, segment: 'business' },
-  { id: 16, name: 'Thomas Miller',     company: 'Alliance Group',            email: 'thomas.miller@alliancegroup.com',         phone: '+1 (678) 901-2345', status: 'active',  orders: 10, totalSpent: 42100, lifetimeValue: 42100, segment: 'business' },
-  { id: 17, name: 'Lisa Rodriguez',    company: 'MetroWorks Inc',            email: 'lisa.rodriguez@metroworksinc.com',        phone: '+1 (789) 012-3456', status: 'active',  orders: 9,  totalSpent: 39500, lifetimeValue: 39500, segment: 'business' },
-  { id: 18, name: 'Joseph Wilson',     company: 'TechView Solutions',        email: 'joseph.wilson@techviewsolutions.com',     phone: '+1 (890) 123-4567', status: 'active',  orders: 7,  totalSpent: 37000, lifetimeValue: 37000, segment: 'business' },
-  { id: 19, name: 'Mary Taylor',       company: 'Pacific Trading Co',        email: 'mary.taylor@pacifictradingco.com',        phone: '+1 (901) 234-5678', status: 'active',  orders: 8,  totalSpent: 34400, lifetimeValue: 34400, segment: 'business' },
-  { id: 20, name: 'Patricia Moore',    company: 'Global Dynamics',           email: 'patricia.moore@globaldynamics.com',       phone: '+1 (012) 345-6789', status: 'active',  orders: 7,  totalSpent: 31900, lifetimeValue: 31900, segment: 'business' },
-  { id: 21, name: 'Elizabeth Jackson', company: 'Apex Systems',              email: 'elizabeth.jackson@apexsystems.com',       phone: '+1 (123) 456-7890', status: 'active',  orders: 6,  totalSpent: 29300, lifetimeValue: 29300, segment: 'business' },
-  { id: 22, name: 'Linda Martin',      company: 'Vertex Group',              email: 'linda.martin@vertexgroup.com',            phone: '+1 (234) 567-8901', status: 'active',  orders: 6,  totalSpent: 26800, lifetimeValue: 26800, segment: 'business' },
-  { id: 23, name: 'Robert Hernandez',  company: 'Synergy Corp',              email: 'robert.hernandez@synergycorp.com',        phone: '+1 (345) 678-9012', status: 'active',  orders: 5,  totalSpent: 24200, lifetimeValue: 24200, segment: 'startup' },
-  { id: 24, name: 'Michael Lopez',     company: 'Prime Industries',          email: 'michael.lopez@primeindustries.com',       phone: '+1 (456) 789-0123', status: 'active',  orders: 4,  totalSpent: 21700, lifetimeValue: 21700, segment: 'startup' },
-  { id: 25, name: 'David Smith',       company: 'Nova Tech',                 email: 'david.smith@novatech.com',                phone: '+1 (567) 890-1234', status: 'active',  orders: 5,  totalSpent: 19100, lifetimeValue: 19100, segment: 'startup' },
-  { id: 26, name: 'James Williams',    company: 'Summit Holdings',           email: 'james.williams@summitholdings.com',       phone: '+1 (678) 901-2345', status: 'active',  orders: 4,  totalSpent: 16600, lifetimeValue: 16600, segment: 'startup' },
-  { id: 27, name: 'Emily Johnson',     company: 'Cascade Enterprises',       email: 'emily.johnson@cascadeenterprises.com',    phone: '+1 (789) 012-3456', status: 'inactive',   orders: 3,  totalSpent: 14000, lifetimeValue: 14000, segment: 'startup' },
-  { id: 28, name: 'Sarah Brown',       company: 'Horizon Partners',          email: 'sarah.brown@horizonpartners.com',         phone: '+1 (890) 123-4567', status: 'active',  orders: 3,  totalSpent: 11500, lifetimeValue: 11500, segment: 'startup' },
-  { id: 29, name: 'Amanda Jones',      company: 'Alliance Group',            email: 'amanda.jones@alliancegroup.com',          phone: '+1 (901) 234-5678', status: 'active',  orders: 2,  totalSpent: 8900, lifetimeValue: 8900, segment: 'individual' },
-  { id: 30, name: 'Richard Garcia',    company: 'MetroWorks Inc',            email: 'richard.garcia@metroworksinc.com',        phone: '+1 (012) 345-6789', status: 'active',  orders: 2,  totalSpent: 6400, lifetimeValue: 6400, segment: 'individual' },
-  { id: 31, name: 'Jessica Miller',    company: 'QuarterTech Industries',    email: 'jessica.miller@quartertechindustries.com', phone: '+1 (123) 456-7891', status: 'active',  orders: 2,  totalSpent: 5800, lifetimeValue: 5800, segment: 'individual' },
-  { id: 32, name: 'Christopher Davis', company: 'TechView Solutions',        email: 'christopher.davis@techviewsolutions.com', phone: '+1 (234) 567-8902', status: 'active',  orders: 2,  totalSpent: 5200, lifetimeValue: 5200, segment: 'individual' },
-  { id: 33, name: 'Jennifer Wilson',   company: 'Pacific Trading Co',        email: 'jennifer.wilson@pacifictradingco.com',    phone: '+1 (345) 678-9013', status: 'active',  orders: 1,  totalSpent: 4600, lifetimeValue: 4600, segment: 'individual' },
-  { id: 34, name: 'Thomas Anderson',   company: 'Global Dynamics',           email: 'thomas.anderson@globaldynamics.com',      phone: '+1 (456) 789-0124', status: 'active',  orders: 1,  totalSpent: 4000, lifetimeValue: 4000, segment: 'individual' },
-  { id: 35, name: 'Lisa Thomas',       company: 'Apex Systems',              email: 'lisa.thomas@apexsystems.com',             phone: '+1 (567) 890-1235', status: 'active',  orders: 1,  totalSpent: 3400, lifetimeValue: 3400, segment: 'individual' },
-  { id: 36, name: 'Joseph Taylor',     company: 'Vertex Group',              email: 'joseph.taylor@vertexgroup.com',           phone: '+1 (678) 901-2346', status: 'active',  orders: 1,  totalSpent: 2800, lifetimeValue: 2800, segment: 'individual' },
-  { id: 37, name: 'Mary Moore',        company: 'Synergy Corp',              email: 'mary.moore@synergycorp.com',              phone: '+1 (789) 012-3457', status: 'active',  orders: 1,  totalSpent: 2200, lifetimeValue: 2200, segment: 'individual' },
-  { id: 38, name: 'Patricia Jackson',  company: 'Prime Industries',          email: 'patricia.jackson@primeindustries.com',    phone: '+1 (890) 123-4568', status: 'inactive',   orders: 0,  totalSpent: 1800, lifetimeValue: 1800, segment: 'individual' },
-  { id: 39, name: 'Elizabeth Martin',  company: 'Nova Tech',                 email: 'elizabeth.martin@novatech.com',           phone: '+1 (901) 234-5679', status: 'active',  orders: 0,  totalSpent: 1400, lifetimeValue: 1400, segment: 'individual' },
-  { id: 40, name: 'Linda Hernandez',   company: 'Summit Holdings',           email: 'linda.hernandez@summitholdings.com',      phone: '+1 (012) 345-6790', status: 'active',  orders: 0,  totalSpent: 1000, lifetimeValue: 1000, segment: 'individual' },
-  { id: 41, name: 'Robert Lopez',      company: 'Cascade Enterprises',       email: 'robert.lopez@cascadeenterprises.com',     phone: '+1 (123) 456-7892', status: 'active',  orders: 0,  totalSpent: 800, lifetimeValue: 800, segment: 'individual' },
-  { id: 42, name: 'Michael Smith',     company: 'Horizon Partners',          email: 'michael.smith@horizonpartners.com',       phone: '+1 (234) 567-8903', status: 'active',  orders: 0,  totalSpent: 600, lifetimeValue: 600, segment: 'individual' },
-  { id: 43, name: 'David Brown',       company: 'Alliance Group',            email: 'david.brown@alliancegroup.com',           phone: '+1 (345) 678-9014', status: 'active',  orders: 0,  totalSpent: 400, lifetimeValue: 400, segment: 'individual' },
-  { id: 44, name: 'James Johnson',     company: 'MetroWorks Inc',            email: 'james.johnson@metroworksinc.com',         phone: '+1 (456) 789-0125', status: 'active',  orders: 0,  totalSpent: 200, lifetimeValue: 200, segment: 'individual' },
-  { id: 45, name: 'Emily Williams',    company: 'QuarterTech Industries',    email: 'emily.williams@quartertechindustries.com', phone: '+1 (567) 890-1236', status: 'active',  orders: 0,  totalSpent: 100, lifetimeValue: 100, segment: 'individual' },
-  { id: 46, name: 'Sarah Jones',       company: 'TechView Solutions',        email: 'sarah.jones@techviewsolutions.com',       phone: '+1 (678) 901-2347', status: 'active',  orders: 0,  totalSpent: 50, lifetimeValue: 50, segment: 'individual' },
-  { id: 47, name: 'Amanda Garcia',     company: 'Pacific Trading Co',        email: 'amanda.garcia@pacifictradingco.com',      phone: '+1 (789) 012-3458', status: 'active',  orders: 0,  totalSpent: 0, lifetimeValue: 0, segment: 'individual' },
-  { id: 48, name: 'Richard Miller',    company: 'Global Dynamics',           email: 'richard.miller@globaldynamics.com',       phone: '+1 (890) 123-4569', status: 'active',  orders: 0,  totalSpent: 0, lifetimeValue: 0, segment: 'individual' },
-  { id: 49, name: 'Jessica Davis',     company: 'Apex Systems',              email: 'jessica.davis@apexsystems.com',           phone: '+1 (901) 234-5680', status: 'active',  orders: 0,  totalSpent: 0, lifetimeValue: 0, segment: 'individual' },
-  { id: 50, name: 'Christopher Wilson', company: 'Vertex Group',             email: 'christopher.wilson@vertexgroup.com',      phone: '+1 (012) 345-6791', status: 'active',  orders: 0,  totalSpent: 0, lifetimeValue: 0, segment: 'individual' },
-]
+// Generate client names for orders/invoices
+const clientNames = firstNames.flatMap(fn => lastNames.slice(0, 5).map(ln => `${fn} ${ln}`)).slice(0, 50)
 
 // Orders (100 items)
-const orderStatuses = ['Shipped', 'Processing', 'Delivered', 'Cancelled', 'Pending']
-const customerNames = CUSTOMERS.map(c => c.name)
+const orderStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
 
 export const ORDERS = [
   { id: 'ORD00001', customer: 'David Smith',      amount: 104149, status: 'Shipped',    date: '2026-02-12' },
@@ -119,7 +59,7 @@ export const ORDERS = [
   { id: 'ORD00008', customer: 'Amanda Rodriguez', amount: 107668, status: 'Delivered',  date: '2025-12-26' },
   ...Array.from({ length: 92 }, (_, i) => ({
     id: `ORD${String(i + 9).padStart(5, '0')}`,
-    customer: customerNames[Math.floor(Math.random() * customerNames.length)],
+    customer: clientNames[Math.floor(Math.random() * clientNames.length)],
     amount: randomInt(5000, 150000),
     status: orderStatuses[Math.floor(Math.random() * orderStatuses.length)],
     date: randomDate('2025-06-01', '2026-02-28')
@@ -130,21 +70,25 @@ export const ORDERS = [
 const invoiceStatuses = ['Paid', 'Overdue', 'Draft', 'Sent']
 
 export const INVOICES = [
-  { id: 'INV00001', customer: 'David Smith',      amount: 104149, status: 'Overdue', issueDate: '2026-02-01', dueDate: '2026-03-03' },
-  { id: 'INV00002', customer: 'Robert Garcia',    amount: 18856,  status: 'Overdue', issueDate: '2026-01-16', dueDate: '2026-02-16' },
-  { id: 'INV00003', customer: 'William Davis',    amount: 141063, status: 'Paid',    issueDate: '2026-02-11', dueDate: '2026-03-11' },
-  { id: 'INV00004', customer: 'Amanda Williams',  amount: 66200,  status: 'Paid',    issueDate: '2026-02-28', dueDate: '2026-03-30' },
-  { id: 'INV00005', customer: 'Michael Jones',    amount: 36602,  status: 'Paid',    issueDate: '2026-02-04', dueDate: '2026-03-06' },
+  { id: 'INV00001', customer: 'David Smith',      amount: 104149, status: 'Overdue', issueDate: '2026-02-01', dueDate: '2026-03-03', txHash: `0x${randomHex(64)}`, ipfsCid: `Qm${randomHex(44)}` },
+  { id: 'INV00002', customer: 'Robert Garcia',    amount: 18856,  status: 'Overdue', issueDate: '2026-01-16', dueDate: '2026-02-16', txHash: `0x${randomHex(64)}`, ipfsCid: `Qm${randomHex(44)}` },
+  { id: 'INV00003', customer: 'William Davis',    amount: 141063, status: 'Paid',    issueDate: '2026-02-11', dueDate: '2026-03-11', txHash: `0x${randomHex(64)}`, ipfsCid: `Qm${randomHex(44)}` },
+  { id: 'INV00004', customer: 'Amanda Williams',  amount: 66200,  status: 'Paid',    issueDate: '2026-02-28', dueDate: '2026-03-30', txHash: `0x${randomHex(64)}`, ipfsCid: null },
+  { id: 'INV00005', customer: 'Michael Jones',    amount: 36602,  status: 'Paid',    issueDate: '2026-02-04', dueDate: '2026-03-06', txHash: `0x${randomHex(64)}`, ipfsCid: `Qm${randomHex(44)}` },
   ...Array.from({ length: 95 }, (_, i) => {
     const issueDate = randomDate('2025-10-01', '2026-02-28')
     const dueDate = new Date(new Date(issueDate).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const hasTx = Math.random() < 0.7
+    const hasCid = hasTx && Math.random() < 0.6
     return {
       id: `INV${String(i + 6).padStart(5, '0')}`,
-      customer: customerNames[Math.floor(Math.random() * customerNames.length)],
+      customer: clientNames[Math.floor(Math.random() * clientNames.length)],
       amount: randomInt(5000, 150000),
       status: invoiceStatuses[Math.floor(Math.random() * invoiceStatuses.length)],
       issueDate,
-      dueDate
+      dueDate,
+      txHash: hasTx ? `0x${randomHex(64)}` : null,
+      ipfsCid: hasCid ? `Qm${randomHex(44)}` : null
     }
   })
 ]
@@ -162,15 +106,15 @@ export const TICKETS = Array.from({ length: 30 }, (_, i) => ({
   status: ticketStatuses[i % ticketStatuses.length],
   priority: ticketPriorities[Math.floor(Math.random() * ticketPriorities.length)],
   assignee: ticketAssignees[Math.floor(Math.random() * ticketAssignees.length)],
-  customer: customerNames[Math.floor(Math.random() * customerNames.length)],
+  client: clientNames[Math.floor(Math.random() * clientNames.length)],
   createdAt: randomDate('2026-01-01', '2026-03-05'),
   updatedAt: randomDate('2026-02-01', '2026-03-05')
 }))
 
 // Audit Log (100 entries)
 const auditUsers = ['Sarah Chen', 'Chris Wilson', 'Emily Davis', 'Mike Johnson', 'Alex Thompson']
-const auditActions = ['Processed payment', 'Resolved support ticket', 'Updated order status', 'Verified blockchain record', 'Added customer', 'Created order', 'Generated invoice', 'Exported report', 'Updated product pricing', 'Modified user permissions', 'Updated inventory']
-const auditEntities = ['User', 'Settings', 'Order', 'Invoice', 'Customer', 'Product', 'Ticket']
+const auditActions = ['Processed payment', 'Resolved support ticket', 'Updated order status', 'Verified blockchain record', 'Created order', 'Generated invoice', 'Exported report', 'Updated product pricing', 'Modified user permissions', 'Updated inventory']
+const auditEntities = ['User', 'Settings', 'Order', 'Invoice', 'Product', 'Ticket']
 
 export const AUDIT_LOG = Array.from({ length: 100 }, (_, i) => {
   const hasHash = Math.random() < 0.6
@@ -192,7 +136,7 @@ export const AUDIT_LOG = Array.from({ length: 100 }, (_, i) => {
 })
 
 // Blockchain Transactions (200 items)
-const blockchainTypes = ['Invoice', 'Order', 'Audit', 'Customer', 'Inventory']
+const blockchainTypes = ['Invoice', 'Order', 'Audit', 'Inventory']
 
 export const BLOCKCHAIN_TXS = Array.from({ length: 200 }, (_, i) => {
   const type = blockchainTypes[Math.floor(Math.random() * blockchainTypes.length)]
@@ -366,7 +310,7 @@ export const generateBlockchainTx = () => {
 export const generateOrder = () => {
   return {
     id: `ORD${String(Date.now()).slice(-5)}`,
-    customer: customerNames[Math.floor(Math.random() * customerNames.length)],
+    customer: clientNames[Math.floor(Math.random() * clientNames.length)],
     amount: randomInt(5000, 150000),
     status: 'Pending',
     date: new Date().toISOString().split('T')[0]

@@ -1,373 +1,249 @@
 import { useState } from 'react'
 import { useStore } from '../store/useStore'
-import Button from '../components/UI/Button'
 
 export default function Settings() {
   const user = useStore((state) => state.user)
+  const setUser = useStore((state) => state.setUser)
   const setUserRole = useStore((state) => state.setUserRole)
+  const theme = useStore((state) => state.theme)
+  const setTheme = useStore((state) => state.setTheme)
+  const notificationSettings = useStore((state) => state.notificationSettings)
+  const toggleNotificationSetting = useStore((state) => state.toggleNotificationSetting)
   const addToast = useStore((state) => state.addToast)
-  const addAuditEntry = useStore((state) => state.addAuditEntry)
 
   const [activeTab, setActiveTab] = useState('profile')
-  const [formData, setFormData] = useState({
+  const [profileForm, setProfileForm] = useState({
     name: user.name,
-    email: 'admin@blockerp.io',
-    company: 'BlockERP Inc.',
-    timezone: 'UTC-5',
-    language: 'en',
-    theme: 'light',
-    notifications: {
-      email: true,
-      push: true,
-      orders: true,
-      inventory: true,
-      blockchain: false,
-    },
-    security: {
-      twoFactor: false,
-      sessionTimeout: 30,
-    }
+    email: user.email,
+    phone: user.phone || '',
+    department: user.department || ''
   })
 
+  const handleProfileSave = () => {
+    setUser(profileForm)
+    addToast('Profile updated successfully', 'success')
+  }
+
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
-    { id: 'notifications', label: 'Notifications', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
-    { id: 'appearance', label: 'Appearance', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
-    { id: 'security', label: 'Security', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
-    { id: 'system', label: 'System', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
+    { id: 'profile', label: 'Profile' },
+    { id: 'notifications', label: 'Notifications' },
+    { id: 'appearance', label: 'Appearance' },
+    { id: 'security', label: 'Security' },
   ]
 
-  const handleSave = () => {
-    addAuditEntry({
-      action: 'UPDATE',
-      entity: 'Settings',
-      entityId: user.name,
-      details: `Updated ${activeTab} settings`
-    })
-    addToast('Settings saved successfully', 'success')
-  }
-
-  const handleRoleChange = (role) => {
-    setUserRole(role)
-    addToast(`Role switched to ${role}`, 'info')
-  }
-
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">Settings</h1>
-        <p className="text-text-secondary mt-1">Manage your account and application settings</p>
-      </div>
+      <header className="page-header">
+        <h1 className="page-title">Settings</h1>
+        <p className="page-subtitle">Manage your account and preferences</p>
+      </header>
 
-      <div className="flex gap-6">
-        {/* Sidebar */}
-        <div className="w-56 shrink-0">
-          <div className="bg-white rounded-xl shadow-sm border border-border p-2">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === tab.id 
-                    ? 'bg-blue/10 text-blue' 
-                    : 'text-text-secondary hover:bg-gray-50'
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={tab.icon} />
-                </svg>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Settings Layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 'var(--space-6)' }}>
+        {/* Sidebar Tabs */}
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: 'var(--space-3) var(--space-4)',
+                textAlign: 'left',
+                background: activeTab === tab.id ? 'var(--accent)' : 'transparent',
+                border: 'none',
+                borderRadius: 'var(--radius-medium)',
+                fontWeight: activeTab === tab.id ? 'var(--font-medium)' : 'var(--font-normal)',
+                cursor: 'pointer',
+                transition: 'background var(--transition-fast)'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
 
         {/* Content */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm border border-border p-6">
+        <div className="card" style={{ padding: 'var(--space-6)' }}>
           {activeTab === 'profile' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-text-primary">Profile Settings</h2>
-              
-              <div className="flex items-center gap-6">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue to-purple flex items-center justify-center text-white text-2xl font-bold">
-                  {user.name.charAt(0)}
-                </div>
-                <Button variant="secondary">Change Avatar</Button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+              <div>
+                <h2 style={{ fontSize: 'var(--text-5)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-1)' }}>Profile Information</h2>
+                <p style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>Update your account details</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                <figure data-variant="avatar" style={{ 
+                  width: 80, height: 80, 
+                  background: 'var(--erp-primary)', color: 'white', 
+                  fontSize: 'var(--text-3)', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  borderRadius: '50%', fontWeight: 'var(--font-medium)' 
+                }}>
+                  {user.initials}
+                </figure>
                 <div>
-                  <label className="block text-sm text-text-secondary mb-1">Full Name</label>
+                  <button data-variant="secondary" className="small">Change Avatar</button>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                <div>
+                  <label>Full Name</label>
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-2 border border-border rounded-lg"
+                    value={profileForm.name}
+                    onChange={(e) => setProfileForm(f => ({ ...f, name: e.target.value }))}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-text-secondary mb-1">Email</label>
+                  <label>Email</label>
                   <input
                     type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-4 py-2 border border-border rounded-lg"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm(f => ({ ...f, email: e.target.value }))}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-text-secondary mb-1">Company</label>
+                  <label>Phone</label>
+                  <input
+                    type="tel"
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm(f => ({ ...f, phone: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label>Department</label>
                   <input
                     type="text"
-                    value={formData.company}
-                    onChange={(e) => setFormData({...formData, company: e.target.value})}
-                    className="w-full px-4 py-2 border border-border rounded-lg"
+                    value={profileForm.department}
+                    onChange={(e) => setProfileForm(f => ({ ...f, department: e.target.value }))}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-text-secondary mb-1">Timezone</label>
+                  <label>Role</label>
                   <select
-                    value={formData.timezone}
-                    onChange={(e) => setFormData({...formData, timezone: e.target.value})}
-                    className="w-full px-4 py-2 border border-border rounded-lg"
+                    value={user.role}
+                    onChange={(e) => setUserRole(e.target.value)}
                   >
-                    <option value="UTC-8">Pacific Time (UTC-8)</option>
-                    <option value="UTC-5">Eastern Time (UTC-5)</option>
-                    <option value="UTC+0">UTC</option>
-                    <option value="UTC+1">Central European Time (UTC+1)</option>
+                    <option value="admin">Administrator</option>
+                    <option value="manager">Manager</option>
+                    <option value="viewer">Viewer</option>
                   </select>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-border flex justify-end">
-                <Button onClick={handleSave}>Save Changes</Button>
+              <div>
+                <button onClick={handleProfileSave}>Save Changes</button>
               </div>
             </div>
           )}
 
           {activeTab === 'notifications' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-text-primary">Notification Preferences</h2>
-
-              <div className="space-y-4">
-                {[
-                  { key: 'email', label: 'Email Notifications', desc: 'Receive notifications via email' },
-                  { key: 'push', label: 'Push Notifications', desc: 'Browser push notifications' },
-                  { key: 'orders', label: 'Order Updates', desc: 'New orders and status changes' },
-                  { key: 'inventory', label: 'Inventory Alerts', desc: 'Low stock and restock notifications' },
-                  { key: 'blockchain', label: 'Blockchain Events', desc: 'Transaction confirmations and verifications' },
-                ].map(item => (
-                  <div key={item.key} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                    <div>
-                      <p className="font-medium text-text-primary">{item.label}</p>
-                      <p className="text-sm text-text-secondary">{item.desc}</p>
-                    </div>
-                    <button
-                      onClick={() => setFormData({
-                        ...formData,
-                        notifications: {
-                          ...formData.notifications,
-                          [item.key]: !formData.notifications[item.key]
-                        }
-                      })}
-                      className={`w-12 h-6 rounded-full transition-colors ${
-                        formData.notifications[item.key] ? 'bg-blue' : 'bg-gray-200'
-                      }`}
-                    >
-                      <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                        formData.notifications[item.key] ? 'translate-x-6' : 'translate-x-0.5'
-                      }`} />
-                    </button>
-                  </div>
-                ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+              <div>
+                <h2 style={{ fontSize: 'var(--text-5)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-1)' }}>Notification Preferences</h2>
+                <p style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>Choose how you want to be notified</p>
               </div>
 
-              <div className="pt-4 border-t border-border flex justify-end">
-                <Button onClick={handleSave}>Save Changes</Button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                {Object.entries(notificationSettings).map(([key, value]) => (
+                  <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={value}
+                      onChange={() => toggleNotificationSetting(key)}
+                    />
+                    <span style={{ textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                  </label>
+                ))}
               </div>
             </div>
           )}
 
           {activeTab === 'appearance' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-text-primary">Appearance Settings</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+              <div>
+                <h2 style={{ fontSize: 'var(--text-5)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-1)' }}>Appearance</h2>
+                <p style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>Customize the look and feel</p>
+              </div>
 
               <div>
-                <label className="block text-sm text-text-secondary mb-3">Theme</label>
-                <div className="flex gap-4">
-                  {[
-                    { id: 'light', label: 'Light', color: '#ffffff' },
-                    { id: 'dark', label: 'Dark', color: '#1a1a2e' },
-                    { id: 'system', label: 'System', color: 'linear-gradient(135deg, #fff 50%, #1a1a2e 50%)' },
-                  ].map(theme => (
-                    <button
-                      key={theme.id}
-                      onClick={() => setFormData({...formData, theme: theme.id})}
-                      className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-colors ${
-                        formData.theme === theme.id ? 'border-blue' : 'border-border hover:border-gray-300'
-                      }`}
-                    >
-                      <div 
-                        className="w-16 h-16 rounded-lg border border-border"
-                        style={{ background: theme.color }}
-                      />
-                      <span className="text-sm font-medium">{theme.label}</span>
-                    </button>
-                  ))}
+                <label style={{ marginBottom: 'var(--space-2)', display: 'block' }}>Theme</label>
+                <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                  <button
+                    onClick={() => setTheme('light')}
+                    style={{
+                      padding: 'var(--space-3) var(--space-4)',
+                      border: `2px solid ${theme === 'light' ? 'var(--erp-primary)' : 'var(--border)'}`,
+                      borderRadius: 'var(--radius-medium)',
+                      background: theme === 'light' ? 'color-mix(in srgb, var(--erp-primary) 10%, transparent)' : 'var(--background)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-2)'
+                    }}
+                  >
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    Light
+                  </button>
+                  <button
+                    onClick={() => setTheme('dark')}
+                    style={{
+                      padding: 'var(--space-3) var(--space-4)',
+                      border: `2px solid ${theme === 'dark' ? 'var(--erp-primary)' : 'var(--border)'}`,
+                      borderRadius: 'var(--radius-medium)',
+                      background: theme === 'dark' ? 'color-mix(in srgb, var(--erp-primary) 10%, transparent)' : 'var(--background)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-2)'
+                    }}
+                  >
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    Dark
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-text-secondary mb-3">Language</label>
-                <select
-                  value={formData.language}
-                  onChange={(e) => setFormData({...formData, language: e.target.value})}
-                  className="w-full max-w-xs px-4 py-2 border border-border rounded-lg"
-                >
-                  <option value="en">English</option>
-                  <option value="es">Español</option>
-                  <option value="fr">Français</option>
-                  <option value="de">Deutsch</option>
-                </select>
-              </div>
-
-              <div className="pt-4 border-t border-border flex justify-end">
-                <Button onClick={handleSave}>Save Changes</Button>
               </div>
             </div>
           )}
 
           {activeTab === 'security' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-text-primary">Security Settings</h2>
-
-              <div className="flex items-center justify-between py-3 border-b border-border">
-                <div>
-                  <p className="font-medium text-text-primary">Two-Factor Authentication</p>
-                  <p className="text-sm text-text-secondary">Add extra security with 2FA</p>
-                </div>
-                <button
-                  onClick={() => setFormData({
-                    ...formData,
-                    security: { ...formData.security, twoFactor: !formData.security.twoFactor }
-                  })}
-                  className={`w-12 h-6 rounded-full transition-colors ${
-                    formData.security.twoFactor ? 'bg-green' : 'bg-gray-200'
-                  }`}
-                >
-                  <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    formData.security.twoFactor ? 'translate-x-6' : 'translate-x-0.5'
-                  }`} />
-                </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+              <div>
+                <h2 style={{ fontSize: 'var(--text-5)', fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-1)' }}>Security</h2>
+                <p style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>Manage your security settings</p>
               </div>
 
               <div>
-                <label className="block text-sm text-text-secondary mb-2">Session Timeout (minutes)</label>
-                <select
-                  value={formData.security.sessionTimeout}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    security: { ...formData.security, sessionTimeout: Number(e.target.value) }
-                  })}
-                  className="w-full max-w-xs px-4 py-2 border border-border rounded-lg"
-                >
-                  <option value={15}>15 minutes</option>
-                  <option value={30}>30 minutes</option>
-                  <option value={60}>1 hour</option>
-                  <option value={120}>2 hours</option>
-                </select>
-              </div>
-
-              <div className="p-4 bg-red/5 rounded-lg border border-red/20">
-                <p className="font-medium text-red">Danger Zone</p>
-                <p className="text-sm text-text-secondary mt-1 mb-3">Irreversible actions</p>
-                <Button variant="secondary" className="border-red text-red hover:bg-red/10">
-                  Delete Account
-                </Button>
-              </div>
-
-              <div className="pt-4 border-t border-border flex justify-end">
-                <Button onClick={handleSave}>Save Changes</Button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'system' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-text-primary">System Settings</h2>
-
-              {/* RBAC Demo */}
-              <div className="p-4 bg-purple/5 rounded-lg border border-purple/20">
-                <p className="font-medium text-purple mb-2">Role-Based Access Control (Demo)</p>
-                <p className="text-sm text-text-secondary mb-4">
-                  Switch roles to see how different access levels affect the UI
-                </p>
-                <div className="flex gap-2 mb-4">
-                  {['admin', 'manager', 'viewer'].map(role => (
-                    <button
-                      key={role}
-                      onClick={() => handleRoleChange(role)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
-                        user.role === role 
-                          ? 'bg-purple text-white' 
-                          : 'bg-white border border-border hover:bg-gray-50'
-                      }`}
-                    >
-                      {role}
-                    </button>
-                  ))}
-                </div>
-                
-                {/* Role Permissions Info */}
-                <div className="mt-4 p-4 bg-white rounded-lg border border-border">
-                  <p className="font-medium text-text-primary mb-3">Role Permissions</p>
-                  <div className="grid gap-3">
-                    <div className={`p-3 rounded-lg ${user.role === 'admin' ? 'bg-purple/10 border border-purple/30' : 'bg-gray-50'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-purple"></span>
-                        <span className="font-medium text-text-primary">Administrator</span>
-                      </div>
-                      <p className="text-xs text-text-secondary ml-4">Full system access: Analytics, Blockchain, Audit Logs, Settings, User Management</p>
-                    </div>
-                    <div className={`p-3 rounded-lg ${user.role === 'manager' ? 'bg-blue/10 border border-blue/30' : 'bg-gray-50'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-blue"></span>
-                        <span className="font-medium text-text-primary">Manager</span>
-                      </div>
-                      <p className="text-xs text-text-secondary ml-4">Operations access: Orders, Inventory, Customers, Analytics, Reports</p>
-                    </div>
-                    <div className={`p-3 rounded-lg ${user.role === 'viewer' ? 'bg-gray-200 border border-gray-300' : 'bg-gray-50'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                        <span className="font-medium text-text-primary">Viewer</span>
-                      </div>
-                      <p className="text-xs text-text-secondary ml-4">Read-only: Dashboard, Orders, Customers, Inventory (no analytics/settings)</p>
-                    </div>
+                <h3 style={{ fontWeight: 'var(--font-medium)', marginBottom: 'var(--space-3)' }}>Change Password</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', maxWidth: '400px' }}>
+                  <div>
+                    <label>Current Password</label>
+                    <input type="password" placeholder="Enter current password" />
                   </div>
+                  <div>
+                    <label>New Password</label>
+                    <input type="password" placeholder="Enter new password" />
+                  </div>
+                  <div>
+                    <label>Confirm New Password</label>
+                    <input type="password" placeholder="Confirm new password" />
+                  </div>
+                  <button style={{ alignSelf: 'flex-start' }}>Update Password</button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-text-muted">Current Role</p>
-                  <p className="text-lg font-semibold text-text-primary capitalize">{user.role}</p>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-text-muted">App Version</p>
-                  <p className="text-lg font-semibold text-text-primary">1.0.0</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="font-medium text-text-primary mb-2">Data Management</p>
-                <div className="flex gap-2">
-                  <Button variant="secondary" onClick={() => addToast('Backup started...', 'info')}>
-                    Backup Data
-                  </Button>
-                  <Button variant="secondary" onClick={() => addToast('All caches cleared', 'success')}>
-                    Clear Cache
-                  </Button>
-                </div>
+              <div style={{ paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border)' }}>
+                <h3 style={{ fontWeight: 'var(--font-medium)', marginBottom: 'var(--space-3)' }}>Two-Factor Authentication</h3>
+                <p style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)', marginBottom: 'var(--space-3)' }}>
+                  Add an extra layer of security to your account
+                </p>
+                <button data-variant="secondary">Enable 2FA</button>
               </div>
             </div>
           )}

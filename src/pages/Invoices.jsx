@@ -1,10 +1,5 @@
 import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
-import Badge from '../components/UI/Badge'
-import Button from '../components/UI/Button'
-import Modal from '../components/UI/Modal'
-import AnimatedNumber from '../components/UI/AnimatedNumber'
-import InvoiceGenerator from '../components/Invoice/InvoiceGenerator'
 
 export default function Invoices() {
   const invoices = useStore((state) => state.invoices)
@@ -18,8 +13,7 @@ export default function Invoices() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedInvoice, setSelectedInvoice] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [showInvoiceGenerator, setShowInvoiceGenerator] = useState(false)
-  const pageSize = 20
+  const pageSize = 15
 
   const stats = getInvoiceStats()
 
@@ -28,7 +22,7 @@ export default function Invoices() {
       const query = (localSearch || searchQuery).toLowerCase()
       const matchesSearch = !query || 
         invoice.id.toLowerCase().includes(query) ||
-        invoice.customer.toLowerCase().includes(query)
+        (invoice.customer || '').toLowerCase().includes(query)
       let matchesStatus = statusFilter === 'all'
       if (statusFilter === 'paid') matchesStatus = invoice.status === 'Paid'
       if (statusFilter === 'overdue') matchesStatus = invoice.status === 'Overdue'
@@ -51,121 +45,105 @@ export default function Invoices() {
     }
     updateInvoiceStatus(invoiceId, newStatus)
     addToast(`Invoice ${invoiceId} marked as ${newStatus}`, 'success')
+    setSelectedInvoice(null)
   }
 
-  const getStatusBadge = (status) => {
-    const variants = {
-      Paid: 'success',
-      Draft: 'default',
-      Sent: 'warning',
-      Overdue: 'error'
+  const getStatusClass = (status) => {
+    const map = {
+      'Paid': 'success',
+      'Draft': 'neutral',
+      'Sent': 'info',
+      'Overdue': 'danger',
     }
-    return <Badge variant={variants[status] || 'default'}>{status}</Badge>
+    return map[status] || 'neutral'
   }
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString()
-  }
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR'
-    }).format(value)
-  }
-
-  const getDaysOverdue = (dueDate, status) => {
-    if (status !== 'overdue') return null
-    const due = new Date(dueDate)
-    const today = new Date()
-    const diff = Math.floor((today - due) / (1000 * 60 * 60 * 24))
-    return diff
-  }
+  const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString()
+  const formatCurrency = (value) => `₹${value.toLocaleString()}`
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Invoices</h1>
-          <p className="text-text-secondary mt-1">Manage billing and payment tracking</p>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="page-header" style={{ marginBottom: 0 }}>
+          <h1 className="page-title">Invoices</h1>
+          <p className="page-subtitle">Manage billing and payment tracking</p>
         </div>
         {user.role !== 'viewer' && (
-          <Button onClick={() => setShowInvoiceGenerator(true)}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button>
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ marginRight: 'var(--space-2)' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Create Invoice
-          </Button>
+          </button>
         )}
-      </div>
+      </header>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Total Invoices</p>
-          <p className="text-2xl font-bold text-text-primary mt-1">
-            <AnimatedNumber value={stats.total} />
-          </p>
+      <div className="data-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+        <div className="kpi-card">
+          <div className="kpi-label">Total Invoices</div>
+          <div className="kpi-value">{stats.total}</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Paid</p>
-          <p className="text-2xl font-bold text-green mt-1">
-            <AnimatedNumber value={stats.paid} />
-          </p>
-          <p className="text-xs text-text-muted mt-1">{formatCurrency(stats.paidValue)}</p>
+        <div className="kpi-card">
+          <div className="kpi-label">Paid</div>
+          <div className="kpi-value" style={{ color: 'var(--erp-success)' }}>{stats.paid}</div>
+          <div style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>{formatCurrency(stats.paidValue)}</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Pending</p>
-          <p className="text-2xl font-bold text-orange mt-1">
-            <AnimatedNumber value={stats.pending} />
-          </p>
-          <p className="text-xs text-text-muted mt-1">{formatCurrency(stats.pendingValue)}</p>
+        <div className="kpi-card">
+          <div className="kpi-label">Pending</div>
+          <div className="kpi-value" style={{ color: 'var(--erp-warning)' }}>{stats.pending}</div>
+          <div style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>{formatCurrency(stats.pendingValue)}</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Overdue</p>
-          <p className="text-2xl font-bold text-red mt-1">
-            <AnimatedNumber value={stats.overdue} />
-          </p>
-          <p className="text-xs text-text-muted mt-1">{formatCurrency(stats.overdueValue)}</p>
+        <div className="kpi-card">
+          <div className="kpi-label">Overdue</div>
+          <div className="kpi-value" style={{ color: 'var(--erp-danger)' }}>{stats.overdue}</div>
+          <div style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>{formatCurrency(stats.overdueValue)}</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Total Value</p>
-          <p className="text-2xl font-bold text-blue mt-1">
-            ${Math.round(stats.totalValue / 1000)}K
-          </p>
+        <div className="kpi-card">
+          <div className="kpi-label">Total Value</div>
+          <div className="kpi-value" style={{ color: 'var(--erp-primary)' }}>{formatCurrency(stats.totalValue)}</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4">
-        <div className="relative flex-1 max-w-xs">
-          <svg 
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted"
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+      <div className="filter-bar">
+        <div style={{ position: 'relative', flex: 1, maxWidth: '300px' }}>
           <input
-            type="text"
+            type="search"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search invoices..."
-            className="w-full pl-10 pr-4 py-2 bg-white border border-border rounded-lg text-sm"
+            style={{ paddingLeft: 'var(--space-10)' }}
           />
+          <svg 
+            width="18" height="18" 
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            style={{ position: 'absolute', left: 'var(--space-3)', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-foreground)' }}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
-        <div className="flex gap-2">
-          {['all', 'paid', 'pending', 'overdue'].map(status => (
+        
+        <div role="tablist" style={{ display: 'flex' }}>
+          {['all', 'paid', 'pending', 'overdue'].map((status, i, arr) => (
             <button
               key={status}
+              role="tab"
+              aria-selected={statusFilter === status}
               onClick={() => { setStatusFilter(status); setCurrentPage(1) }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
-                statusFilter === status 
-                  ? 'bg-blue text-white' 
-                  : 'bg-white border border-border hover:bg-gray-50'
-              }`}
+              style={{
+                padding: 'var(--space-2) var(--space-4)',
+                fontSize: 'var(--text-7)',
+                fontWeight: 'var(--font-medium)',
+                textTransform: 'capitalize',
+                border: '1px solid var(--border)',
+                borderRight: i === arr.length - 1 ? '1px solid var(--border)' : 'none',
+                borderRadius: i === 0 ? 'var(--radius-medium) 0 0 var(--radius-medium)' : i === arr.length - 1 ? '0 var(--radius-medium) var(--radius-medium) 0' : '0',
+                background: statusFilter === status ? 'var(--erp-primary)' : 'var(--background)',
+                color: statusFilter === status ? 'white' : 'var(--foreground)',
+                cursor: 'pointer'
+              }}
             >
               {status}
             </button>
@@ -174,156 +152,174 @@ export default function Invoices() {
       </div>
 
       {/* Invoices Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <div className="table">
+          <table>
             <thead>
-              <tr className="border-b border-border bg-gray-50">
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Invoice ID</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Customer</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Issue Date</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Due Date</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Amount</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Status</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Actions</th>
+              <tr>
+                <th>Invoice ID</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Due Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {paginatedInvoices.map((invoice) => {
-                const daysOverdue = getDaysOverdue(invoice.dueDate, invoice.status)
-                return (
-                  <tr 
-                    key={invoice.id} 
-                    className={`border-b border-border last:border-0 hover:bg-gray-50 transition-colors cursor-pointer ${
-                      invoice.status === 'overdue' ? 'bg-red/5' : ''
-                    }`}
-                    onClick={() => setSelectedInvoice(invoice)}
-                  >
-                    <td className="py-3 px-6 text-sm font-medium text-blue">{invoice.id}</td>
-                    <td className="py-3 px-6 text-sm text-text-primary">{invoice.customer}</td>
-                    <td className="py-3 px-6 text-sm text-text-secondary">{formatDate(invoice.issueDate)}</td>
-                    <td className="py-3 px-6 text-sm text-text-secondary">
-                      {formatDate(invoice.dueDate)}
-                      {daysOverdue && (
-                        <span className="ml-2 text-xs text-red">({daysOverdue}d overdue)</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-6 text-sm font-medium text-text-primary">
-                      {formatCurrency(invoice.amount)}
-                    </td>
-                    <td className="py-3 px-6">{getStatusBadge(invoice.status)}</td>
-                    <td className="py-3 px-6" onClick={(e) => e.stopPropagation()}>
-                      {user.role !== 'viewer' && invoice.status !== 'paid' && (
-                        <Button 
-                          size="sm" 
-                          variant="secondary"
-                          onClick={() => handleStatusUpdate(invoice.id, 'paid')}
-                        >
-                          Mark Paid
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
+              {paginatedInvoices.map((invoice) => (
+                <tr 
+                  key={invoice.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setSelectedInvoice(invoice)}
+                >
+                  <td style={{ fontWeight: 'var(--font-medium)', color: 'var(--erp-primary)' }}>{invoice.id}</td>
+                  <td>{invoice.customer}</td>
+                  <td style={{ color: 'var(--muted-foreground)' }}>{formatDate(invoice.issueDate)}</td>
+                  <td style={{ color: 'var(--muted-foreground)' }}>{formatDate(invoice.dueDate)}</td>
+                  <td style={{ fontWeight: 'var(--font-medium)' }}>{formatCurrency(invoice.amount)}</td>
+                  <td>
+                    <span className={`status-badge ${getStatusClass(invoice.status)}`}>
+                      {invoice.status}
+                    </span>
+                  </td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    {user.role !== 'viewer' && invoice.status !== 'Paid' && (
+                      <button 
+                        className="small"
+                        onClick={() => handleStatusUpdate(invoice.id, 'Paid')}
+                      >
+                        Mark Paid
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
         
         {/* Pagination */}
-        <div className="px-6 py-4 border-t border-border flex items-center justify-between">
-          <p className="text-sm text-text-muted">
-            Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredInvoices.length)} of {filteredInvoices.length} invoices
-          </p>
-          <div className="flex gap-2">
-            <Button 
-              variant="secondary" 
-              size="sm" 
+        <div style={{ 
+          padding: 'var(--space-4)', 
+          borderTop: '1px solid var(--border)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between' 
+        }}>
+          <span style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>
+            Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredInvoices.length)} of {filteredInvoices.length}
+          </span>
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <button 
+              data-variant="secondary"
+              className="small"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
             >
               Previous
-            </Button>
-            <Button 
-              variant="secondary" 
-              size="sm" 
+            </button>
+            <button 
+              data-variant="secondary"
+              className="small"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(p => p + 1)}
             >
               Next
-            </Button>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Invoice Detail Modal */}
+      {/* Invoice Detail Dialog */}
       {selectedInvoice && (
-        <Modal 
-          title={`Invoice ${selectedInvoice.id}`} 
-          onClose={() => setSelectedInvoice(null)}
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-text-muted">Customer</label>
-                <p className="font-medium text-text-primary">{selectedInvoice.customer}</p>
-              </div>
-              <div>
-                <label className="text-sm text-text-muted">Amount</label>
-                <p className="font-medium text-text-primary">{formatCurrency(selectedInvoice.amount)}</p>
-              </div>
-              <div>
-                <label className="text-sm text-text-muted">Issue Date</label>
-                <p className="font-medium text-text-primary">{formatDate(selectedInvoice.issueDate)}</p>
-              </div>
-              <div>
-                <label className="text-sm text-text-muted">Due Date</label>
-                <p className="font-medium text-text-primary">{formatDate(selectedInvoice.dueDate)}</p>
-              </div>
-            </div>
+        <dialog open style={{ position: 'fixed', inset: 0, zIndex: 'var(--z-modal)', background: 'transparent', border: 'none' }}>
+          <div 
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={() => setSelectedInvoice(null)}
+          >
+            <div 
+              className="card" 
+              style={{ width: '100%', maxWidth: '500px', padding: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <header style={{ padding: 'var(--space-4)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 style={{ fontSize: 'var(--text-5)', fontWeight: 'var(--font-semibold)' }}>
+                  Invoice {selectedInvoice.id}
+                </h2>
+                <button className="icon-btn" onClick={() => setSelectedInvoice(null)}>×</button>
+              </header>
+              
+              <div style={{ padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+                  <div>
+                    <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>Customer</label>
+                    <p style={{ fontWeight: 'var(--font-medium)' }}>{selectedInvoice.customer}</p>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>Amount</label>
+                    <p style={{ fontWeight: 'var(--font-medium)' }}>{formatCurrency(selectedInvoice.amount)}</p>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>Issue Date</label>
+                    <p style={{ fontWeight: 'var(--font-medium)' }}>{formatDate(selectedInvoice.issueDate)}</p>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>Due Date</label>
+                    <p style={{ fontWeight: 'var(--font-medium)' }}>{formatDate(selectedInvoice.dueDate)}</p>
+                  </div>
+                </div>
 
-            <div>
-              <label className="text-sm text-text-muted">Status</label>
-              <div className="mt-1">{getStatusBadge(selectedInvoice.status)}</div>
-            </div>
+                <div>
+                  <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)' }}>Status</label>
+                  <div style={{ marginTop: 'var(--space-1)' }}>
+                    <span className={`status-badge ${getStatusClass(selectedInvoice.status)}`}>
+                      {selectedInvoice.status}
+                    </span>
+                  </div>
+                </div>
 
-            {selectedInvoice.blockchainHash && (
-              <div>
-                <label className="text-sm text-text-muted">Blockchain Hash</label>
-                <p className="font-mono text-xs text-green break-all mt-1">
-                  {selectedInvoice.blockchainHash}
-                </p>
+                {/* Blockchain & IPFS Verification */}
+                {(selectedInvoice.txHash || selectedInvoice.ipfsCid) && (
+                  <div style={{ padding: 'var(--space-3)', background: 'var(--muted)', borderRadius: 'var(--radius-2)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                    <label style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)', fontWeight: 'var(--font-semibold)' }}>Blockchain & IPFS</label>
+                    {selectedInvoice.txHash && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                        <span style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>Tx Hash:</span>
+                        <code style={{ fontSize: 'var(--text-9)', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={selectedInvoice.txHash}>
+                          {selectedInvoice.txHash.slice(0, 10)}...{selectedInvoice.txHash.slice(-8)}
+                        </code>
+                        <button className="icon-btn" style={{ fontSize: 'var(--text-8)', padding: '2px 6px' }} onClick={() => { navigator.clipboard.writeText(selectedInvoice.txHash); }} title="Copy hash">
+                          &#x2398;
+                        </button>
+                      </div>
+                    )}
+                    {selectedInvoice.ipfsCid && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                        <span style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>IPFS CID:</span>
+                        <code style={{ fontSize: 'var(--text-9)', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={selectedInvoice.ipfsCid}>
+                          {selectedInvoice.ipfsCid.slice(0, 12)}...{selectedInvoice.ipfsCid.slice(-6)}
+                        </code>
+                        <button className="icon-btn" style={{ fontSize: 'var(--text-8)', padding: '2px 6px' }} onClick={() => { navigator.clipboard.writeText(selectedInvoice.ipfsCid); }} title="Copy CID">
+                          &#x2398;
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {user.role !== 'viewer' && selectedInvoice.status !== 'Paid' && (
+                  <div style={{ paddingTop: 'var(--space-3)', borderTop: '1px solid var(--border)' }}>
+                    <button onClick={() => handleStatusUpdate(selectedInvoice.id, 'Paid')}>
+                      Mark as Paid
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-
-            <div className="pt-4 border-t border-border flex gap-2">
-              <Button variant="secondary" onClick={() => addToast('Downloading PDF...', 'info')}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download PDF
-              </Button>
-              <Button variant="secondary" onClick={() => addToast('Email sent', 'success')}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                Send Reminder
-              </Button>
-              {user.role !== 'viewer' && selectedInvoice.status !== 'paid' && (
-                <Button onClick={() => handleStatusUpdate(selectedInvoice.id, 'paid')}>
-                  Mark as Paid
-                </Button>
-              )}
             </div>
           </div>
-        </Modal>
+        </dialog>
       )}
-
-      {/* Invoice Generator Modal */}
-      <InvoiceGenerator 
-        isOpen={showInvoiceGenerator} 
-        onClose={() => setShowInvoiceGenerator(false)} 
-      />
     </div>
   )
 }

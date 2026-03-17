@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlockERP - Blockchain-Integrated ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="loading-fallback" style="padding:2rem;font-family:sans-serif">Loading BlockERP...</div>
+  <script src="js/data.js"></script>
+  <script>
+    if(typeof window.DATA==='undefined'){
+      document.getElementById('loading-fallback').innerHTML='<span style="color:red">ERROR: data.js failed to load</span>';
+    } else {
+      document.getElementById('loading-fallback').textContent='Data loaded. Loading app...';
+    }
+  </script>
+  <script src="js/app.js"></script>
+</body>
+</html>

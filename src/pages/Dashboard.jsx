@@ -1,36 +1,118 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../store/useStore'
-import AnimatedNumber from '../components/UI/AnimatedNumber'
-import Badge from '../components/UI/Badge'
-import LineChart from '../components/Charts/LineChart'
-import DonutChart from '../components/Charts/DonutChart'
 
-const kpiIcons = {
-  revenue: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+// Simple animated number component
+function AnimatedNumber({ value, prefix = '', suffix = '' }) {
+  const [displayed, setDisplayed] = useState(value)
+  
+  useEffect(() => {
+    const duration = 500
+    const steps = 20
+    const increment = (value - displayed) / steps
+    let current = displayed
+    let step = 0
+    
+    const timer = setInterval(() => {
+      step++
+      current += increment
+      setDisplayed(Math.round(current))
+      if (step >= steps) {
+        setDisplayed(value)
+        clearInterval(timer)
+      }
+    }, duration / steps)
+    
+    return () => clearInterval(timer)
+  }, [value])
+  
+  return <>{prefix}{displayed.toLocaleString()}{suffix}</>
+}
+
+// Simple Line Chart using SVG
+function SimpleLineChart({ data, height = 200 }) {
+  if (!data || data.length === 0) return null
+  
+  const maxValue = Math.max(...data.map(d => d.value)) * 1.1
+  const minValue = 0
+  const width = 100
+  
+  const points = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * width
+    const y = height - ((d.value - minValue) / (maxValue - minValue)) * height
+    return `${x},${y}`
+  }).join(' ')
+  
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: height }} preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="var(--erp-primary)" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="var(--erp-primary)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points={`0,${height} ${points} ${width},${height}`}
+        fill="url(#lineGradient)"
+      />
+      <polyline
+        points={points}
+        fill="none"
+        stroke="var(--erp-primary)"
+        strokeWidth="2"
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
-  ),
-  orders: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-    </svg>
-  ),
-  customers: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  ),
-  pending: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  ),
-  leads: (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-    </svg>
-  ),
+  )
+}
+
+// Simple Donut Chart
+function SimpleDonutChart({ segments }) {
+  const total = segments.reduce((sum, s) => sum + s.value, 0)
+  let currentAngle = -90
+  
+  const paths = segments.map((segment, i) => {
+    const angle = (segment.value / total) * 360
+    const startAngle = currentAngle
+    const endAngle = currentAngle + angle
+    currentAngle = endAngle
+    
+    const startRad = (startAngle * Math.PI) / 180
+    const endRad = (endAngle * Math.PI) / 180
+    
+    const x1 = 50 + 40 * Math.cos(startRad)
+    const y1 = 50 + 40 * Math.sin(startRad)
+    const x2 = 50 + 40 * Math.cos(endRad)
+    const y2 = 50 + 40 * Math.sin(endRad)
+    
+    const largeArc = angle > 180 ? 1 : 0
+    
+    return (
+      <path
+        key={i}
+        d={`M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z`}
+        fill={segment.color}
+        opacity={0.9}
+      />
+    )
+  })
+  
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-6)' }}>
+      <svg viewBox="0 0 100 100" style={{ width: 160, height: 160 }}>
+        {paths}
+        <circle cx="50" cy="50" r="25" fill="var(--card)" />
+      </svg>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        {segments.map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-8)' }}>
+            <span style={{ width: 12, height: 12, borderRadius: 'var(--radius-small)', background: s.color }} />
+            <span style={{ color: 'var(--muted-foreground)' }}>{s.label}</span>
+            <span style={{ fontWeight: 'var(--font-medium)', marginLeft: 'auto' }}>{s.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function Dashboard() {
@@ -62,118 +144,170 @@ export default function Dashboard() {
   }
 
   const donutSegments = [
-    { label: 'Shipped', value: orderStats.shipped, color: '#7c3aed' },
-    { label: 'Processing', value: orderStats.processing, color: '#f39c12' },
-    { label: 'Delivered', value: orderStats.delivered, color: '#2ecc71' },
-    { label: 'Cancelled', value: orderStats.cancelled, color: '#e74c3c' },
-    { label: 'Pending', value: orderStats.pending, color: '#adb5bd' },
+    { label: 'Shipped', value: orderStats.shipped, color: '#8b5cf6' },
+    { label: 'Processing', value: orderStats.processing, color: '#f59e0b' },
+    { label: 'Delivered', value: orderStats.delivered, color: '#10b981' },
+    { label: 'Cancelled', value: orderStats.cancelled, color: '#ef4444' },
+    { label: 'Pending', value: orderStats.pending, color: '#94a3b8' },
   ]
 
+  const getStatusClass = (status) => {
+    const map = {
+      'Pending': 'neutral',
+      'Processing': 'warning', 
+      'Shipped': 'info',
+      'Delivered': 'success',
+      'Cancelled': 'danger',
+      'Paid': 'success',
+      'Overdue': 'danger',
+      'Draft': 'neutral',
+      'Sent': 'info',
+      'Verified': 'success',
+    }
+    return map[status] || 'neutral'
+  }
+
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">Welcome back, {user.name.split(' ')[0]}!</h1>
-        <p className="text-text-secondary mt-1">
+      <header className="page-header">
+        <h1 className="page-title">Welcome back, {user.name.split(' ')[0]}!</h1>
+        <p className="page-subtitle">
           Here's what's happening with your business · {currentTime.toLocaleTimeString()}
         </p>
-      </div>
+      </header>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <KPICard
-          label="Total Revenue"
-          value={<AnimatedNumber value={metrics.totalRevenue} prefix="₹" />}
-          icon={kpiIcons.revenue}
-          iconBg="bg-green/10"
-          iconColor="text-green"
-          change={12.5}
-        />
-        <KPICard
-          label="Total Orders"
-          value={<AnimatedNumber value={metrics.totalOrders} />}
-          icon={kpiIcons.orders}
-          iconBg="bg-blue/10"
-          iconColor="text-blue"
-          change={8.2}
-        />
-        <KPICard
-          label="Active Customers"
-          value={<AnimatedNumber value={metrics.activeCustomers} />}
-          icon={kpiIcons.customers}
-          iconBg="bg-purple/10"
-          iconColor="text-purple"
-          change={-2.4}
-        />
-        <KPICard
-          label="Pending Orders"
-          value={<AnimatedNumber value={metrics.pendingOrders} />}
-          icon={kpiIcons.pending}
-          iconBg="bg-orange/10"
-          iconColor="text-orange"
-          change={5.1}
-        />
-        <KPICard
-          label="Leads Pipeline"
-          value={<AnimatedNumber value={metrics.leadsPipeline} />}
-          icon={kpiIcons.leads}
-          iconBg="bg-blue/10"
-          iconColor="text-blue"
-          change={15.3}
-        />
+      <div className="data-grid data-grid-4">
+        <div className="kpi-card">
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <div className="kpi-label">Total Revenue</div>
+              <div className="kpi-value"><AnimatedNumber value={metrics.totalRevenue} prefix="₹" /></div>
+              <div className="kpi-change positive">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+                12.5%
+              </div>
+            </div>
+            <div style={{ padding: 'var(--space-2)', background: 'color-mix(in srgb, var(--erp-success) 15%, transparent)', borderRadius: 'var(--radius-medium)', color: 'var(--erp-success)' }}>
+              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <div className="kpi-label">Total Orders</div>
+              <div className="kpi-value"><AnimatedNumber value={metrics.totalOrders} /></div>
+              <div className="kpi-change positive">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+                8.2%
+              </div>
+            </div>
+            <div style={{ padding: 'var(--space-2)', background: 'color-mix(in srgb, var(--erp-primary) 15%, transparent)', borderRadius: 'var(--radius-medium)', color: 'var(--erp-primary)' }}>
+              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <div className="kpi-label">Pending Orders</div>
+              <div className="kpi-value"><AnimatedNumber value={metrics.pendingOrders} /></div>
+              <div className="kpi-change positive">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+                5.1%
+              </div>
+            </div>
+            <div style={{ padding: 'var(--space-2)', background: 'color-mix(in srgb, var(--erp-warning) 15%, transparent)', borderRadius: 'var(--radius-medium)', color: 'var(--erp-warning)' }}>
+              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <div className="kpi-label">Inventory Items</div>
+              <div className="kpi-value"><AnimatedNumber value={12} /></div>
+              <div className="kpi-change negative">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: 'rotate(180deg)' }}>
+                  <path d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+                2.4%
+              </div>
+            </div>
+            <div style={{ padding: 'var(--space-2)', background: 'color-mix(in srgb, var(--erp-purple) 15%, transparent)', borderRadius: 'var(--radius-medium)', color: 'var(--erp-purple)' }}>
+              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="data-grid data-grid-2">
         {/* Revenue Chart */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-border">
-          <div className="mb-4">
-            <h3 className="font-semibold text-text-primary">Revenue Over Time</h3>
-            <p className="text-sm text-text-secondary">Last 12 months</p>
-          </div>
-          <LineChart data={revenueHistory} width={500} height={250} />
+        <div className="chart-container">
+          <div className="chart-title">Revenue Over Time</div>
+          <p style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)', marginBottom: 'var(--space-4)', marginTop: 'calc(var(--space-1) * -1)' }}>Last 12 months</p>
+          <SimpleLineChart data={revenueHistory} height={200} />
         </div>
 
         {/* Order Status */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-border">
-          <div className="mb-4">
-            <h3 className="font-semibold text-text-primary">Order Status</h3>
-            <p className="text-sm text-text-secondary">Distribution by status</p>
-          </div>
-          <DonutChart segments={donutSegments} width={350} height={200} />
+        <div className="chart-container">
+          <div className="chart-title">Order Status Distribution</div>
+          <p style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)', marginBottom: 'var(--space-4)', marginTop: 'calc(var(--space-1) * -1)' }}>Current breakdown</p>
+          <SimpleDonutChart segments={donutSegments} />
         </div>
       </div>
 
       {/* Tables Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="data-grid data-grid-2">
         {/* Recent Orders */}
-        <div className="bg-white rounded-xl shadow-sm border border-border">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-            <h3 className="font-semibold text-text-primary">Recent Orders</h3>
-            <button 
-              onClick={() => setActivePage('orders')}
-              className="text-sm text-blue hover:underline"
-            >
+        <div className="card" style={{ overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4)', borderBottom: '1px solid var(--border)' }}>
+            <h3 style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-6)' }}>Recent Orders</h3>
+            <button className="ghost small" onClick={() => setActivePage('orders')}>
               View all →
             </button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="table">
+            <table>
               <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Order ID</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Customer</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Amount</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Status</th>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Amount</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.slice(0, 5).map((order) => (
-                  <tr key={order.id} className="border-b border-border last:border-0 hover:bg-gray-50">
-                    <td className="py-3 px-6 text-sm font-medium text-text-primary">{order.id}</td>
-                    <td className="py-3 px-6 text-sm text-text-secondary">{order.customer}</td>
-                    <td className="py-3 px-6 text-sm text-text-primary">${order.amount.toLocaleString()}</td>
-                    <td className="py-3 px-6"><Badge>{order.status}</Badge></td>
+                  <tr key={order.id}>
+                    <td style={{ fontWeight: 'var(--font-medium)' }}>{order.id}</td>
+                    <td style={{ color: 'var(--muted-foreground)' }}>{order.customer}</td>
+                    <td>₹{order.amount.toLocaleString()}</td>
+                    <td>
+                      <span className={`status-badge ${getStatusClass(order.status)}`}>
+                        {order.status}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -182,33 +316,34 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Invoices */}
-        <div className="bg-white rounded-xl shadow-sm border border-border">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-            <h3 className="font-semibold text-text-primary">Recent Invoices</h3>
-            <button 
-              onClick={() => setActivePage('invoices')}
-              className="text-sm text-blue hover:underline"
-            >
+        <div className="card" style={{ overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4)', borderBottom: '1px solid var(--border)' }}>
+            <h3 style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-6)' }}>Recent Invoices</h3>
+            <button className="ghost small" onClick={() => setActivePage('invoices')}>
               View all →
             </button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="table">
+            <table>
               <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Invoice ID</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Customer</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Amount</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Status</th>
+                <tr>
+                  <th>Invoice ID</th>
+                  <th>Customer</th>
+                  <th>Amount</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {invoices.slice(0, 5).map((invoice) => (
-                  <tr key={invoice.id} className="border-b border-border last:border-0 hover:bg-gray-50">
-                    <td className="py-3 px-6 text-sm font-medium text-text-primary">{invoice.id}</td>
-                    <td className="py-3 px-6 text-sm text-text-secondary">{invoice.customer}</td>
-                    <td className="py-3 px-6 text-sm text-text-primary">${invoice.amount.toLocaleString()}</td>
-                    <td className="py-3 px-6"><Badge>{invoice.status}</Badge></td>
+                  <tr key={invoice.id}>
+                    <td style={{ fontWeight: 'var(--font-medium)' }}>{invoice.id}</td>
+                    <td style={{ color: 'var(--muted-foreground)' }}>{invoice.customer}</td>
+                    <td>₹{invoice.amount.toLocaleString()}</td>
+                    <td>
+                      <span className={`status-badge ${getStatusClass(invoice.status)}`}>
+                        {invoice.status}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -218,108 +353,92 @@ export default function Dashboard() {
       </div>
 
       {/* Activity Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Pending Orders</p>
-          <p className="text-2xl font-bold text-text-primary mt-1">
+      <div className="data-grid data-grid-4">
+        <div className="card" style={{ padding: 'var(--space-4)' }}>
+          <p style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>Pending Orders</p>
+          <p style={{ fontSize: 'var(--text-2)', fontWeight: 'var(--font-bold)', marginTop: 'var(--space-1)' }}>
             <AnimatedNumber value={orderStats.pending} />
           </p>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Delivered</p>
-          <p className="text-2xl font-bold text-green mt-1">
+        <div className="card" style={{ padding: 'var(--space-4)' }}>
+          <p style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>Delivered</p>
+          <p style={{ fontSize: 'var(--text-2)', fontWeight: 'var(--font-bold)', marginTop: 'var(--space-1)', color: 'var(--erp-success)' }}>
             <AnimatedNumber value={orderStats.delivered} />
           </p>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Paid Invoices</p>
-          <p className="text-2xl font-bold text-green mt-1">
+        <div className="card" style={{ padding: 'var(--space-4)' }}>
+          <p style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>Paid Invoices</p>
+          <p style={{ fontSize: 'var(--text-2)', fontWeight: 'var(--font-bold)', marginTop: 'var(--space-1)', color: 'var(--erp-success)' }}>
             <AnimatedNumber value={invoiceStats.paid} />
           </p>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Verified Txns</p>
-          <p className="text-2xl font-bold text-blue mt-1">
+        <div className="card" style={{ padding: 'var(--space-4)' }}>
+          <p style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>Verified Txns</p>
+          <p style={{ fontSize: 'var(--text-2)', fontWeight: 'var(--font-bold)', marginTop: 'var(--space-1)', color: 'var(--erp-primary)' }}>
             <AnimatedNumber value={blockchainTxs.filter(t => t.status === 'Verified').length} />
           </p>
         </div>
       </div>
 
       {/* Blockchain Activity Panel */}
-      <div className="bg-white rounded-xl shadow-sm border border-border">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-text-primary">Blockchain Activity</h3>
-            <span className="flex items-center gap-1 px-2 py-0.5 bg-green/10 text-green text-xs font-medium rounded-full">
-              <span className="w-1.5 h-1.5 bg-green rounded-full animate-pulse" />
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4)', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <h3 style={{ fontWeight: 'var(--font-semibold)', fontSize: 'var(--text-6)' }}>Blockchain Activity</h3>
+            <span className="status-badge success" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
+              <span style={{ width: 6, height: 6, background: 'currentColor', borderRadius: '50%', animation: 'pulse 2s infinite' }} />
               Live
             </span>
           </div>
-          <button 
-            onClick={() => setActivePage('blockchain')}
-            className="text-sm text-blue hover:underline"
-          >
+          <button className="ghost small" onClick={() => setActivePage('blockchain')}>
             View all {blockchainTxs.length} transactions
           </button>
         </div>
-        <div className="divide-y divide-border">
-          {blockchainTxs.slice(0, 8).map((tx, index) => (
+        <div>
+          {blockchainTxs.slice(0, 6).map((tx) => (
             <div 
-              key={tx.id} 
-              className={`flex items-center gap-4 px-6 py-3 ${tx.isNew ? 'animate-slide-down bg-cyan-50' : ''}`}
+              key={tx.id}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 'var(--space-3)', 
+                padding: 'var(--space-3) var(--space-4)',
+                borderBottom: '1px solid var(--border)'
+              }}
             >
-              <span className="text-green">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span style={{ color: 'var(--erp-success)' }}>
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </span>
-              <Badge variant={tx.type}>{tx.type}</Badge>
-              <span className="text-sm text-text-secondary">{tx.entityId}</span>
-              <span className="text-sm font-mono text-blue truncate max-w-[120px]">
-                {tx.hash.slice(0, 12)}...
+              <span className={`status-badge ${tx.type === 'Order' ? 'info' : tx.type === 'Invoice' ? 'warning' : 'neutral'}`}>
+                {tx.type}
               </span>
+              <span style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>{tx.entityId}</span>
+              <code style={{ fontSize: 'var(--text-8)', color: 'var(--erp-primary)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {tx.hash.slice(0, 12)}...
+              </code>
               <button 
-                onClick={() => copyHash(tx.hash)} 
-                className="p-1 text-text-muted hover:text-text-secondary transition-colors"
+                onClick={() => copyHash(tx.hash)}
+                className="icon-btn"
+                style={{ width: '1.5rem', height: '1.5rem' }}
               >
                 {copiedHash === tx.hash ? (
-                  <span className="text-xs text-green">Copied!</span>
+                  <span style={{ fontSize: '0.6rem', color: 'var(--erp-success)' }}>✓</span>
                 ) : (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                 )}
               </button>
-              <Badge variant={tx.status} pulse={tx.status === 'Pending'}>{tx.status}</Badge>
-              <span className="text-xs text-text-muted ml-auto">
+              <span className={`status-badge ${getStatusClass(tx.status)}`}>
+                {tx.status}
+              </span>
+              <span style={{ fontSize: 'var(--text-8)', color: 'var(--muted-foreground)', marginLeft: 'auto' }}>
                 {new Date(tx.timestamp).toLocaleTimeString()}
               </span>
             </div>
           ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function KPICard({ label, value, icon, iconBg, iconColor, change }) {
-  const isPositive = change >= 0
-  
-  return (
-    <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-text-secondary">{label}</p>
-          <p className="text-2xl font-bold text-text-primary mt-1">{value}</p>
-          <div className={`flex items-center gap-1 mt-2 text-sm ${isPositive ? 'text-green' : 'text-red'}`}>
-            <svg className={`w-4 h-4 ${isPositive ? '' : 'rotate-180'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-            </svg>
-            <span>{Math.abs(change)}%</span>
-          </div>
-        </div>
-        <div className={`p-3 rounded-xl ${iconBg} ${iconColor}`}>
-          {icon}
         </div>
       </div>
     </div>

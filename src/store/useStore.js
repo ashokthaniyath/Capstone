@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { PRODUCTS, CUSTOMERS, ORDERS, INVOICES, TICKETS, AUDIT_LOG, BLOCKCHAIN_TXS, REVENUE_HISTORY } from '../data/seed'
+import { PRODUCTS, ORDERS, INVOICES, TICKETS, AUDIT_LOG, BLOCKCHAIN_TXS, REVENUE_HISTORY } from '../data/seed'
 
 export const useStore = create((set, get) => ({
   // Navigation
@@ -52,9 +52,7 @@ export const useStore = create((set, get) => ({
   metrics: {
     totalRevenue: 2541768,
     totalOrders: 100,
-    activeCustomers: 27,
     pendingOrders: 30,
-    leadsPipeline: 16,
   },
   updateMetrics: (options = {}) => set((state) => {
     if (options.revenueOnly) {
@@ -69,9 +67,7 @@ export const useStore = create((set, get) => ({
       metrics: {
         totalRevenue: state.metrics.totalRevenue + Math.floor(Math.random() * 7300) + 1200,
         totalOrders: state.metrics.totalOrders + (Math.random() > 0.5 ? 1 : 0),
-        activeCustomers: state.metrics.activeCustomers + (Math.random() > 0.5 ? 1 : Math.random() > 0.5 ? -1 : 0),
         pendingOrders: Math.max(0, state.metrics.pendingOrders + Math.floor(Math.random() * 5) - 2),
-        leadsPipeline: Math.max(0, state.metrics.leadsPipeline + (Math.random() > 0.5 ? 1 : Math.random() > 0.5 ? -1 : 0)),
       }
     }
   }),
@@ -91,15 +87,6 @@ export const useStore = create((set, get) => ({
   addInvoice: (invoice) => set((state) => ({ invoices: [invoice, ...state.invoices] })),
   updateInvoiceStatus: (id, status) => set((state) => ({
     invoices: state.invoices.map(i => i.id === id ? { ...i, status } : i)
-  })),
-
-  // Customers
-  customers: [...CUSTOMERS],
-  addCustomer: (customer) => set((state) => ({ 
-    customers: [{ ...customer, id: state.customers.length + 1 }, ...state.customers] 
-  })),
-  updateCustomer: (id, data) => set((state) => ({
-    customers: state.customers.map(c => c.id === id ? { ...c, ...data } : c)
   })),
 
   // Inventory
@@ -161,6 +148,22 @@ export const useStore = create((set, get) => ({
   appendBlockchainTx: (tx) => set((state) => ({
     blockchainTxs: [tx, ...state.blockchainTxs].slice(0, 500)
   })),
+
+  // Vendor Trust Scores
+  vendors: [
+    { id: 1, name: 'ABC Traders', vendorId: 'VND-001', trustScore: 87, riskLevel: 'Low', totalOrders: 45, successfulOrders: 42, deliveryDelays: 3, avgDeliveryDays: 4.2, category: 'Hardware', email: 'abc@traders.com', phone: '+91 98765 43210', walletAddress: '0x1a2b3c4d5e6f...', lastOrderDate: '2026-03-12' },
+    { id: 2, name: 'TechSupply Co', vendorId: 'VND-002', trustScore: 72, riskLevel: 'Medium', totalOrders: 30, successfulOrders: 24, deliveryDelays: 6, avgDeliveryDays: 6.8, category: 'Software', email: 'info@techsupply.co', phone: '+91 87654 32109', walletAddress: '0x2b3c4d5e6f7a...', lastOrderDate: '2026-03-08' },
+    { id: 3, name: 'Global Parts Ltd', vendorId: 'VND-003', trustScore: 95, riskLevel: 'Low', totalOrders: 60, successfulOrders: 59, deliveryDelays: 1, avgDeliveryDays: 2.8, category: 'Accessories', email: 'contact@globalparts.com', phone: '+91 76543 21098', walletAddress: '0x3c4d5e6f7a8b...', lastOrderDate: '2026-03-15' },
+    { id: 4, name: 'Metro Components', vendorId: 'VND-004', trustScore: 45, riskLevel: 'High', totalOrders: 20, successfulOrders: 12, deliveryDelays: 8, avgDeliveryDays: 11.5, category: 'Hardware', email: 'sales@metrocomp.in', phone: '+91 65432 10987', walletAddress: '0x4d5e6f7a8b9c...', lastOrderDate: '2026-02-20' },
+    { id: 5, name: 'Precision Tools Inc', vendorId: 'VND-005', trustScore: 63, riskLevel: 'Medium', totalOrders: 35, successfulOrders: 27, deliveryDelays: 5, avgDeliveryDays: 7.1, category: 'Services', email: 'orders@precisiontools.com', phone: '+91 54321 09876', walletAddress: '0x5e6f7a8b9c0d...', lastOrderDate: '2026-03-01' },
+  ],
+
+  // Online/Offline state
+  isOnline: true,
+  setOnline: (status) => set({ isOnline: status }),
+  syncQueue: [],
+  addToSyncQueue: (item) => set((state) => ({ syncQueue: [...state.syncQueue, item] })),
+  clearSyncQueue: () => set({ syncQueue: [] }),
 
   // Toast notifications
   toasts: [],
@@ -260,21 +263,6 @@ export const useStore = create((set, get) => ({
       resolved: tickets.filter(t => t.status === 'resolved').length,
       closed: tickets.filter(t => t.status === 'closed').length,
       critical: tickets.filter(t => t.priority === 'CRITICAL').length,
-    }
-  },
-  getCustomerStats: () => {
-    const customers = get().customers
-    const activeCustomers = customers.filter(c => c.status === 'active')
-    const inactiveCustomers = customers.filter(c => c.status === 'inactive')
-    const totalLifetimeValue = customers.reduce((sum, c) => sum + (c.lifetimeValue || c.totalSpent || 0), 0)
-    return {
-      total: customers.length,
-      active: activeCustomers.length,
-      leads: customers.filter(c => c.orders === 0 && c.status === 'active').length,
-      prospects: customers.filter(c => c.orders > 0 && c.orders < 5).length,
-      churned: inactiveCustomers.length,
-      totalLifetimeValue: totalLifetimeValue,
-      avgLifetimeValue: customers.length > 0 ? totalLifetimeValue / customers.length : 0,
     }
   },
   getBlockchainStats: () => {

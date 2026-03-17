@@ -1,207 +1,170 @@
 import { useState, useMemo } from 'react'
 import { useStore } from '../store/useStore'
-import Badge from '../components/UI/Badge'
-import Button from '../components/UI/Button'
-import Modal from '../components/UI/Modal'
-import AnimatedNumber from '../components/UI/AnimatedNumber'
 
 export default function AuditLog() {
   const auditLog = useStore((state) => state.auditLog)
-  const addToast = useStore((state) => state.addToast)
   const searchQuery = useStore((state) => state.searchQuery)
   const getAuditStats = useStore((state) => state.getAuditStats)
   const user = useStore((state) => state.user)
+  const hasPermission = useStore((state) => state.hasPermission)
+  const addToast = useStore((state) => state.addToast)
 
   const [localSearch, setLocalSearch] = useState('')
   const [actionFilter, setActionFilter] = useState('all')
-  const [entityFilter, setEntityFilter] = useState('all')
-  const [selectedEntry, setSelectedEntry] = useState(null)
-  const [displayCount, setDisplayCount] = useState(50)
-
-  if (user.role === 'viewer') {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-            <svg className="w-8 h-8 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-text-primary">Access Restricted</h2>
-          <p className="text-text-secondary mt-2">You need admin privileges to view Audit Log.</p>
-        </div>
-      </div>
-    )
-  }
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 20
 
   const stats = getAuditStats()
 
-  const actions = useMemo(() => [...new Set(auditLog.map(l => l.action))], [auditLog])
-  const entities = useMemo(() => [...new Set(auditLog.map(l => l.entity))], [auditLog])
+  const actions = useMemo(() => {
+    return [...new Set(auditLog.map(l => l.action))]
+  }, [auditLog])
 
-  const filteredLog = useMemo(() => {
-    return auditLog.filter(entry => {
+  const filteredLogs = useMemo(() => {
+    return auditLog.filter(log => {
       const query = (localSearch || searchQuery).toLowerCase()
       const matchesSearch = !query || 
-        entry.user.toLowerCase().includes(query) ||
-        entry.action.toLowerCase().includes(query) ||
-        entry.entity.toLowerCase().includes(query) ||
-        entry.entityId.toLowerCase().includes(query)
-      const matchesAction = actionFilter === 'all' || entry.action === actionFilter
-      const matchesEntity = entityFilter === 'all' || entry.entity === entityFilter
-      return matchesSearch && matchesAction && matchesEntity
+        log.action.toLowerCase().includes(query) ||
+        log.user.toLowerCase().includes(query) ||
+        log.entityId?.toLowerCase().includes(query)
+      const matchesAction = actionFilter === 'all' || log.action === actionFilter
+      return matchesSearch && matchesAction
     })
-  }, [auditLog, localSearch, searchQuery, actionFilter, entityFilter])
+  }, [auditLog, localSearch, searchQuery, actionFilter])
 
-  const handleExport = () => {
-    addToast(`Preparing export of ${filteredLog.length} entries...`, 'info')
-  }
+  const paginatedLogs = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredLogs.slice(start, start + pageSize)
+  }, [filteredLogs, currentPage])
 
-  const copyHash = (hash) => {
-    navigator.clipboard.writeText(hash)
-    addToast('Hash copied to clipboard', 'success')
-  }
+  const totalPages = Math.ceil(filteredLogs.length / pageSize)
 
   const formatTimestamp = (ts) => {
     const date = new Date(ts)
     return date.toLocaleString()
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Audit Log</h1>
-          <p className="text-text-secondary mt-1">Track all system activities and changes</p>
-        </div>
-        <Button variant="secondary" onClick={handleExport}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          Export Logs
-        </Button>
+  // Check permission
+  if (!hasPermission('view_audit')) {
+    return (
+      <div className="empty-state">
+        <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        <h3 style={{ fontWeight: 'var(--font-semibold)', marginBottom: 'var(--space-2)' }}>Access Restricted</h3>
+        <p>You don't have permission to view the audit log. Contact an administrator for access.</p>
       </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+      {/* Header */}
+      <header className="page-header">
+        <h1 className="page-title">Audit Log</h1>
+        <p className="page-subtitle">Immutable record of all system activities</p>
+      </header>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Total Entries</p>
-          <p className="text-2xl font-bold text-text-primary mt-1">
-            <AnimatedNumber value={stats.total} />
-          </p>
+      <div className="data-grid data-grid-4">
+        <div className="kpi-card">
+          <div className="kpi-label">Total Entries</div>
+          <div className="kpi-value">{stats.total}</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Today</p>
-          <p className="text-2xl font-bold text-blue mt-1">
-            <AnimatedNumber value={stats.today} />
-          </p>
+        <div className="kpi-card">
+          <div className="kpi-label">Today</div>
+          <div className="kpi-value" style={{ color: 'var(--erp-primary)' }}>{stats.today}</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Blockchain Verified</p>
-          <p className="text-2xl font-bold text-green mt-1">
-            <AnimatedNumber value={stats.withHash} />
-          </p>
+        <div className="kpi-card">
+          <div className="kpi-label">With Blockchain Hash</div>
+          <div className="kpi-value" style={{ color: 'var(--erp-success)' }}>{stats.withHash}</div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-border">
-          <p className="text-sm text-text-secondary">Active Users (24h)</p>
-          <p className="text-2xl font-bold text-purple mt-1">
-            <AnimatedNumber value={stats.activeUsers} />
-          </p>
+        <div className="kpi-card">
+          <div className="kpi-label">Active Users (24h)</div>
+          <div className="kpi-value">{stats.activeUsers}</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4">
-        <div className="relative flex-1 max-w-xs">
+      <div className="filter-bar">
+        <div style={{ position: 'relative', flex: 1, maxWidth: '300px' }}>
+          <input
+            type="search"
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            placeholder="Search audit log..."
+            style={{ paddingLeft: 'var(--space-10)' }}
+          />
           <svg 
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted"
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
+            width="18" height="18" 
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            style={{ position: 'absolute', left: 'var(--space-3)', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted-foreground)' }}
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <input
-            type="text"
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Search logs..."
-            className="w-full pl-10 pr-4 py-2 bg-white border border-border rounded-lg text-sm"
-          />
         </div>
-        <select
-          value={actionFilter}
-          onChange={(e) => setActionFilter(e.target.value)}
-          className="px-4 py-2 bg-white border border-border rounded-lg text-sm"
-        >
+        <select value={actionFilter} onChange={(e) => { setActionFilter(e.target.value); setCurrentPage(1) }}>
           <option value="all">All Actions</option>
           {actions.map(action => (
             <option key={action} value={action}>{action}</option>
           ))}
         </select>
-        <select
-          value={entityFilter}
-          onChange={(e) => setEntityFilter(e.target.value)}
-          className="px-4 py-2 bg-white border border-border rounded-lg text-sm"
-        >
-          <option value="all">All Entities</option>
-          {entities.map(entity => (
-            <option key={entity} value={entity}>{entity}</option>
-          ))}
-        </select>
       </div>
 
-      {/* Audit Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      {/* Audit Log Table */}
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <div className="table">
+          <table>
             <thead>
-              <tr className="border-b border-border bg-gray-50">
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Timestamp</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">User</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Action</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Entity</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Blockchain</th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-text-muted uppercase tracking-wide">Details</th>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Entity</th>
+                <th>Entity ID</th>
+                <th>Blockchain Hash</th>
               </tr>
             </thead>
             <tbody>
-              {filteredLog.slice(0, displayCount).map((entry, index) => (
-                <tr 
-                  key={entry.id} 
-                  className={`border-b border-border last:border-0 hover:bg-gray-50 transition-colors ${
-                    entry.isNew ? 'animate-slide-down bg-cyan-50' : ''
-                  }`}
-                >
-                  <td className="py-3 px-6 text-sm text-text-secondary whitespace-nowrap">
-                    {formatTimestamp(entry.timestamp)}
+              {paginatedLogs.map((log) => (
+                <tr key={log.id}>
+                  <td style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>
+                    {formatTimestamp(log.timestamp)}
                   </td>
-                  <td className="py-3 px-6 text-sm font-medium text-text-primary">{entry.user}</td>
-                  <td className="py-3 px-6 text-sm text-text-secondary">{entry.action}</td>
-                  <td className="py-3 px-6">
-                    <Badge variant={entry.entity}>{entry.entity}</Badge>
-                    <span className="ml-2 text-sm text-text-muted">{entry.entityId}</span>
+                  <td style={{ fontWeight: 'var(--font-medium)' }}>{log.user}</td>
+                  <td>
+                    <span className="status-badge info">{log.action}</span>
                   </td>
-                  <td className="py-3 px-6">
-                    {entry.hash ? (
-                      <button 
-                        onClick={() => copyHash(entry.hash)}
-                        className="text-sm font-mono text-green hover:underline"
-                      >
-                        {entry.hash.slice(0, 12)}...
-                      </button>
+                  <td>{log.entity}</td>
+                  <td>
+                    <code style={{ fontSize: 'var(--text-8)' }}>{log.entityId}</code>
+                  </td>
+                  <td>
+                    {log.hash ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
+                        <code 
+                          title={log.hash}
+                          style={{ fontSize: 'var(--text-8)', color: 'var(--erp-success)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', cursor: 'help' }}
+                        >
+                          {log.hash.slice(0, 16)}...
+                        </code>
+                        <button 
+                          className="icon-btn" 
+                          title="Copy full hash"
+                          style={{ width: '1.5rem', height: '1.5rem', flexShrink: 0 }}
+                          onClick={() => {
+                            navigator.clipboard.writeText(log.hash)
+                            addToast('Hash copied to clipboard', 'success')
+                          }}
+                        >
+                          <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
                     ) : (
-                      <span className="text-sm text-text-muted">-</span>
+                      <span style={{ color: 'var(--muted-foreground)' }}>—</span>
                     )}
-                  </td>
-                  <td className="py-3 px-6">
-                    <button 
-                      onClick={() => setSelectedEntry(entry)}
-                      className="text-sm text-blue hover:underline"
-                    >
-                      View
-                    </button>
                   </td>
                 </tr>
               ))}
@@ -210,51 +173,41 @@ export default function AuditLog() {
         </div>
         
         {/* Pagination */}
-        <div className="px-6 py-4 border-t border-border flex items-center justify-between">
-          <p className="text-sm text-text-muted">
-            Showing {Math.min(displayCount, filteredLog.length)} of {filteredLog.length} entries
-          </p>
-          {displayCount < filteredLog.length && (
-            <Button variant="secondary" size="sm" onClick={() => setDisplayCount(d => d + 50)}>
-              Load More
-            </Button>
-          )}
+        <div style={{ 
+          padding: 'var(--space-4)', 
+          borderTop: '1px solid var(--border)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between' 
+        }}>
+          <span style={{ fontSize: 'var(--text-7)', color: 'var(--muted-foreground)' }}>
+            Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredLogs.length)} of {filteredLogs.length}
+          </span>
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <button 
+              data-variant="secondary"
+              className="small"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}
+            >
+              Previous
+            </button>
+            <button 
+              data-variant="secondary"
+              className="small"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Entry Detail Modal */}
-      {selectedEntry && (
-        <Modal title="Audit Entry Details" onClose={() => setSelectedEntry(null)}>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm text-text-muted">Timestamp</label>
-              <p className="font-medium text-text-primary">{formatTimestamp(selectedEntry.timestamp)}</p>
-            </div>
-            <div>
-              <label className="text-sm text-text-muted">User</label>
-              <p className="font-medium text-text-primary">{selectedEntry.user}</p>
-            </div>
-            <div>
-              <label className="text-sm text-text-muted">Action</label>
-              <p className="font-medium text-text-primary">{selectedEntry.action}</p>
-            </div>
-            <div>
-              <label className="text-sm text-text-muted">Entity</label>
-              <p className="font-medium text-text-primary">{selectedEntry.entity} - {selectedEntry.entityId}</p>
-            </div>
-            {selectedEntry.hash && (
-              <div>
-                <label className="text-sm text-text-muted">Blockchain Hash</label>
-                <p className="font-mono text-sm text-green break-all">{selectedEntry.hash}</p>
-              </div>
-            )}
-            <div>
-              <label className="text-sm text-text-muted">Details</label>
-              <p className="font-medium text-text-primary">{selectedEntry.details}</p>
-            </div>
-          </div>
-        </Modal>
-      )}
+      {/* Info Alert */}
+      <div role="alert">
+        <strong>Immutable Records:</strong> All audit log entries are cryptographically secured and cannot be modified or deleted.
+      </div>
     </div>
   )
 }
